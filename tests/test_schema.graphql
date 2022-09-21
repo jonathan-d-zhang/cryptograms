@@ -1,0 +1,11 @@
+type Query {
+  "The api version."
+  apiVersion: String!
+  "Request a new ciphertext."
+  cipher: String!
+  add(a: Float!, b: Float!, c: Float): Float!
+}
+
+schema {
+  query: Query
+}

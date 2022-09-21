@@ -1,10 +1,16 @@
 [package]
-name = "graphql-maze"
+name = "cryptograms"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 juniper = "~0.15"
+juniper_iron = "~0.7"
+iron = ">= 0.5, < 0.7"
+logger = "0.4"
+mount = "0.4"
 
+[dev-dependencies]
+graphql_client = { version = "~0.11", features = ["reqwest-blocking"] }
+serde = "^1.0"
+reqwest = { version = "^0.11", features = ["json", "blocking"] }
