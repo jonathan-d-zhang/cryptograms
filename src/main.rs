@@ -1,15 +1,16 @@
 #[macro_use]
 extern crate juniper;
 use std::env;
-use std::thread;
 
 use iron::prelude::*;
+use juniper::RootNode;
 use juniper::{DefaultScalarValue, EmptyMutation, EmptySubscription};
 use juniper_iron::{GraphQLHandler, GraphiQLHandler};
 use logger::Logger;
 use mount::Mount;
 
 mod ciphers;
+use ciphers::Type;
 struct Query;
 
 #[graphql_object]
@@ -20,12 +21,12 @@ impl Query {
     }
 
     /// Request a new ciphertext.
-    fn cipher() -> String {
-        String::from("eee")
-    }
+    fn cipher(r#type: ciphers::Type) -> ciphers::Cipher {
+        let plaintext = "a";
 
-    fn add(a: f64, b: f64, c: Option<f64>) -> f64 {
-        a + b + c.unwrap_or(0.0)
+        match r#type {
+            Type::Rot13 => ciphers::Cipher::new(plaintext),
+        }
     }
 }
 
@@ -34,6 +35,15 @@ fn context_factory(_: &mut Request) -> IronResult<()> {
 }
 
 pub fn make_server() {
+/*
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
+    println!("{}", schema.as_schema_language());
+    assert!(false);
+*/
     let mut mount = Mount::new();
 
     let graphql_endpoint = <GraphQLHandler<_, _, _, _, _, DefaultScalarValue>>::new(

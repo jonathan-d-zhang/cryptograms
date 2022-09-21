@@ -1,11 +1,30 @@
+type Cipher {
+  "The encrypted text."
+  ciphertext: String!
+  "The type of cipher used."
+  type: Type!
+  "The length of the plaintext."
+  length: Length!
+}
+
 type Query {
   "The api version."
   apiVersion: String!
   "Request a new ciphertext."
-  cipher: String!
-  add(a: Float!, b: Float!, c: Float): Float!
+  cipher(type: Type!): Cipher!
+}
+
+enum Type {
+  ROT13
+}
+
+enum Length {
+  SHORT
+  MEDIUM
+  LONG
 }
 
 schema {
   query: Query
 }
+
