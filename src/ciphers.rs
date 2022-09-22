@@ -11,30 +11,35 @@ pub enum Length {
 }
 
 #[derive(GraphQLObject)]
-pub struct Cipher {
+pub struct Cryptogram {
+    /// The encrypted text.
+    ciphertext: String,
     #[graphql(skip)]
     /// The unencrypted text.
     plaintext: String,
-    /// The encrypted text.
-    ciphertext: String,
+    #[graphql(skip)]
     /// The type of cipher used.
     r#type: Type,
+    #[graphql(skip)]
     /// The length of the plaintext.
     length: Length,
 }
 
-impl Cipher {
-    pub fn new(plaintext: &str) -> Self {
-        Cipher {
-            plaintext: plaintext.to_string(),
-            ciphertext: String::new(),
+impl Cryptogram {
+    pub fn new(r#type: Type, plaintext: &str) -> Self {
+        use Type::*;
+        let cipher = match r#type {
+            Rot13 => rot13,
+        };
+
+        Cryptogram {
+            plaintext: plaintext.to_owned(),
+            ciphertext: String::from("arstneio"),
             r#type: Type::Rot13,
             length: Length::Short,
         }
     }
 }
-
-struct Rot13;
 
 fn rot13(s: &str) -> String {
     let mut out = String::with_capacity(s.len());

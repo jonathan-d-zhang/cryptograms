@@ -9,7 +9,8 @@ use logger::Logger;
 use mount::Mount;
 
 mod ciphers;
-use ciphers::Type;
+mod quotes;
+
 struct Query;
 
 #[graphql_object]
@@ -20,12 +21,17 @@ impl Query {
     }
 
     /// Request a new ciphertext.
-    fn cipher(r#type: ciphers::Type) -> ciphers::Cipher {
-        let plaintext = "a";
-
-        match r#type {
-            Type::Rot13 => ciphers::Cipher::new(plaintext),
-        }
+    fn cryptogram(
+        r#type: ciphers::Type,
+        plaintext: Option<String>,
+        length: Option<ciphers::Length>,
+    ) -> ciphers::Cryptogram {
+        ciphers::Cryptogram::new(
+            r#type,
+            &plaintext.unwrap_or_else(|| {
+                quotes::fetch_quote(length.unwrap_or_else(|| ciphers::Length::Medium))
+            }),
+        )
     }
 }
 

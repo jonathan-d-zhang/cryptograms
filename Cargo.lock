@@ -186,6 +186,7 @@ dependencies = [
  "iron",
  "juniper",
  "juniper_iron",
+ "lazy_static",
  "logger",
  "mount",
  "reqwest",

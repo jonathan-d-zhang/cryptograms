@@ -42,8 +42,7 @@ pub struct Cipher;
 fn test_api_version() {
     setup();
 
-    let response_body =
-        post_graphql::<Version, _>(&CLIENT, URL, version::Variables).unwrap();
+    let response_body = post_graphql::<Version, _>(&CLIENT, URL, version::Variables).unwrap();
 
     let data: version::ResponseData = response_body.data.unwrap();
     println!("{:?}", data);
@@ -61,7 +60,6 @@ fn test_cipher() {
 
     println!("{:?}", response_body);
 
-//    let data: cipher::ResponseData = response_body.data.unwrap();
-//    println!("{:?}", data);
+    //    let data: cipher::ResponseData = response_body.data.unwrap();
+    //    println!("{:?}", data);
 }
-
