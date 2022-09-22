@@ -56,4 +56,3 @@ pub fn make_server() {
     let host = env::var("LISTEN").unwrap_or_else(|_| "0.0.0.0:8080".into());
     Iron::new(chain).http(host.as_str()).unwrap();
 }
-

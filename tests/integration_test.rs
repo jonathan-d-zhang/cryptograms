@@ -28,7 +28,7 @@ fn setup() {
     query_path = "tests/test_query.graphql",
     response_derives = "Debug"
 )]
-pub struct VersionQuery;
+pub struct Version;
 
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -36,32 +36,32 @@ pub struct VersionQuery;
     query_path = "tests/test_query.graphql",
     response_derives = "Debug"
 )]
-pub struct CipherQuery;
+pub struct Cipher;
+
 #[test]
 fn test_api_version() {
     setup();
 
     let response_body =
-        post_graphql::<VersionQuery, _>(&CLIENT, URL, version_query::Variables).unwrap();
+        post_graphql::<Version, _>(&CLIENT, URL, version::Variables).unwrap();
 
-    let data: version_query::ResponseData = response_body.data.unwrap();
+    let data: version::ResponseData = response_body.data.unwrap();
     println!("{:?}", data);
 }
-
 
 #[test]
 fn test_cipher() {
     setup();
 
-    let variables = cipher_query::Variables {
-        type_: cipher_query::Type::ROT13,
+    let variables = cipher::Variables {
+        type_: cipher::Type::ROT13,
     };
 
-    let response_body = post_graphql::<CipherQuery, _>(&CLIENT, URL, variables).unwrap();
+    let response_body = post_graphql::<Cipher, _>(&CLIENT, URL, variables).unwrap();
 
     println!("{:?}", response_body);
 
-//    let data: cipher_query::ResponseData = response_body.data.unwrap();
+//    let data: cipher::ResponseData = response_body.data.unwrap();
 //    println!("{:?}", data);
 }
 
