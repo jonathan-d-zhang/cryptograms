@@ -1,0 +1,10 @@
+query Cryptogram($plaintext: String, $type: Type, $length: Length) {
+  cryptogram(plaintext: $plaintext, type: $type, length: $length) {
+    ciphertext,
+    author,
+  }
+}
+
+query Version {
+  apiVersion
+}

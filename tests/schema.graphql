@@ -1,21 +1,20 @@
-type Cipher {
+type Cryptogram {
   "The encrypted text."
   ciphertext: String!
-  "The type of cipher used."
-  type: Type!
-  "The length of the plaintext."
-  length: Length!
+  "The author of the quote."
+  author: String
 }
 
 type Query {
   "The api version."
   apiVersion: String!
   "Request a new ciphertext."
-  cipher(type: Type!): Cipher!
+  cryptogram(plaintext: String, length: Length, type: Type): Cryptogram!
 }
 
 enum Type {
-  ROT13
+  "Returns the plaintext unchanged." IDENTITY
+  "Shift letters by 13." ROT13
 }
 
 enum Length {
@@ -27,4 +26,3 @@ enum Length {
 schema {
   query: Query
 }
-

@@ -1,5 +1,5 @@
-use cryptograms::make_server;
+use cryptograms;
 
 fn main() {
-    make_server();
+    cryptograms::make_server();
 }

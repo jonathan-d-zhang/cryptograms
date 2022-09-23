@@ -1,9 +1,0 @@
-query Cipher($type: Type!) {
-  cipher(type: $type) {
-    ciphertext
-  }
-}
-
-query Version {
-  apiVersion
-}

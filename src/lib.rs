@@ -22,21 +22,26 @@ impl Query {
 
     /// Request a new ciphertext.
     fn cryptogram(
-        r#type: ciphers::Type,
         plaintext: Option<String>,
         length: Option<ciphers::Length>,
+        r#type: Option<ciphers::Type>,
     ) -> ciphers::Cryptogram {
-        ciphers::Cryptogram::new(
-            r#type,
-            &plaintext.unwrap_or_else(|| {
-                quotes::fetch_quote(length.unwrap_or_else(|| ciphers::Length::Medium))
-            }),
-        )
+        ciphers::Cryptogram::new(plaintext, length, r#type)
     }
 }
 
 fn context_factory(_: &mut Request) -> IronResult<()> {
     Ok(())
+}
+
+pub fn print_schema() {
+    use juniper::RootNode;
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
+    println!("{}", schema.as_schema_language());
 }
 
 pub fn make_server() {

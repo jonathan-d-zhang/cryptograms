@@ -1,9 +1,14 @@
-#[derive(GraphQLEnum)]
+use super::quotes;
+
+#[derive(GraphQLEnum, Copy, Clone)]
 pub enum Type {
+    /// Returns the plaintext unchanged.
+    Identity,
+    /// Shift letters by 13.
     Rot13,
 }
 
-#[derive(GraphQLEnum)]
+#[derive(GraphQLEnum, Copy, Clone)]
 pub enum Length {
     Short,
     Medium,
@@ -23,22 +28,41 @@ pub struct Cryptogram {
     #[graphql(skip)]
     /// The length of the plaintext.
     length: Length,
+    /// The author of the quote.
+    author: Option<String>,
 }
 
 impl Cryptogram {
-    pub fn new(r#type: Type, plaintext: &str) -> Self {
+    pub fn new(plaintext: Option<String>, length: Option<Length>, r#type: Option<Type>) -> Self {
         use Type::*;
+        let r#type = r#type.unwrap_or_else(|| Identity);
+
         let cipher = match r#type {
+            Identity => identity,
             Rot13 => rot13,
         };
 
-        Cryptogram {
-            plaintext: plaintext.to_owned(),
-            ciphertext: String::from("arstneio"),
-            r#type: Type::Rot13,
-            length: Length::Short,
+        let length = length.unwrap_or_else(|| Length::Medium);
+
+        let quote = match plaintext {
+            Some(t) => quotes::Quote::new(t, None),
+            None => quotes::fetch_quote(length),
+        };
+
+        let ciphertext = cipher(&quote.text);
+
+        Self {
+            plaintext: quote.text,
+            ciphertext,
+            r#type,
+            length,
+            author: quote.author,
         }
     }
+}
+
+fn identity(s: &str) -> String {
+    s.to_string()
 }
 
 fn rot13(s: &str) -> String {
