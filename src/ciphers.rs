@@ -69,13 +69,17 @@ fn rot13(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
 
     for chr in s.chars() {
-        let offset;
-        if chr.is_ascii_uppercase() {
-            offset = b'A';
+        if chr.is_ascii_alphabetic() {
+            let offset;
+            if chr.is_ascii_uppercase() {
+                offset = b'A';
+            } else {
+                offset = b'a';
+            }
+            out.push(((chr as u8 - offset + 13) % 26 + offset) as char)
         } else {
-            offset = b'a';
+            out.push(chr);
         }
-        out.push(((chr as u8 - offset + 13) % 26 + offset) as char)
     }
 
     out
