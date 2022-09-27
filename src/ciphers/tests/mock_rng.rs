@@ -18,3 +18,19 @@ impl RngCore for MockRng {
         Ok(self.fill_bytes(dest))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rand::prelude::*;
+    use super::*;
+
+    #[test]
+    fn test_shuffle() {
+        let mut input = vec![1, 2, 3, 4, 5];
+        let expected = vec![2, 3, 4, 5, 1];
+
+        input.shuffle(&mut MockRng);
+
+        assert_eq!(input, expected);
+    }
+}
