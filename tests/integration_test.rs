@@ -112,8 +112,5 @@ fn test_cryptogram_encrypt_identity() {
     let data: cryptogram::ResponseData = response_body.data.unwrap();
     println!("{:?}", data);
 
-    assert_eq!(
-        data.cryptogram.ciphertext,
-        TEST_QUOTE.to_string(),
-    )
+    assert_eq!(data.cryptogram.ciphertext, TEST_QUOTE.to_string(),)
 }
