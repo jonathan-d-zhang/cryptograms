@@ -1,22 +1,34 @@
+#![warn(missing_docs)]
+
 use super::quotes;
 use rand::prelude::*;
 
 const ALPHABET: [u8; 26] = *b"abcdefghijklmnopqrstuvwxyz";
 
 #[derive(GraphQLEnum, Copy, Clone)]
+/// Describe the type of cipher used to encrypt a [`Cryptogram`]
+///
+/// Each of the variants should have an accompanying function with a lowercased name.
+/// For example, [`Identity`] has the function [`identity`]
 pub enum Type {
-    /// Returns the plaintext unchanged.
+    /// Returns the plaintext unchanged. See [`identity`] for more details.
     Identity,
-    /// Shift letters by 13.
+    /// Shift letters by 13. See [`rot13`] for more details.
     Rot13,
-    /// Monoalphabetic substitution
+    /// Monoalphabetic substitution. See [`aristocrat`] for more details.
     Aristocrat,
 }
 
 #[derive(GraphQLEnum, Copy, Clone)]
+/// Describe the length of a quotation concisely.
+///
+/// The ranges for each variant are start inclusive and end exclusive.
 pub enum Length {
+    /// Quotations ranging from 60 to 90 bytes.
     Short,
+    /// Quotations ranging from 90 to 120 bytes.
     Medium,
+    /// Quotations ranging from 120 to 150 bytes.
     Long,
 }
 
@@ -38,6 +50,11 @@ pub struct Cryptogram {
 }
 
 impl Cryptogram {
+    /// Create a Cryptogram from plaintext, length, and type
+    ///
+    /// If plaintext is not given, then a random quotation is selected with
+    /// [`quotes::fetch_quote`]. The default `length` is [`Length::Medium`]. The default `r#type`
+    /// is [`Type::Identity`], though this may change in the future.
     pub fn new(plaintext: Option<String>, length: Option<Length>, r#type: Option<Type>) -> Self {
         use Type::*;
         let r#type = r#type.unwrap_or_else(|| Identity);
@@ -67,10 +84,12 @@ impl Cryptogram {
     }
 }
 
+/// Convenience function to convert a char to a u8
 const fn ord(chr: char) -> u8 {
     chr as u8
 }
 
+/// Convenience function to convert a u8 to a char
 const fn chr(ord: u8) -> char {
     ord as char
 }
@@ -81,10 +100,14 @@ fn match_case(ord: u8, to_match: u8) -> u8 {
     ord & !(1 << 5) | (is_lower << 5)
 }
 
+/// An identity function. Returns the input string unchanged.
 fn identity<R: Rng + ?Sized>(s: &str, _: &mut R) -> String {
     s.to_string()
 }
 
+/// A shift cipher.
+///
+/// The cipher shifts each letter by 13. It is essentially a Caeser cipher but with a fixed shift.
 fn rot13<R: Rng + ?Sized>(s: &str, _: &mut R) -> String {
     let mut out = Vec::with_capacity(s.len());
 
@@ -102,6 +125,10 @@ fn rot13<R: Rng + ?Sized>(s: &str, _: &mut R) -> String {
     String::from_utf8(out).unwrap()
 }
 
+/// A monoalphabetic substitution cipher.
+///
+/// The cipher uniquely maps each letter in the alphabet to a different letter in the alphabet.
+/// This mapping is then used to map the input string to the output string.
 fn aristocrat<R>(s: &str, rng: &mut R) -> String
 where
     R: Rng + ?Sized,

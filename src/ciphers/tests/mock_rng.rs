@@ -21,8 +21,8 @@ impl RngCore for MockRng {
 
 #[cfg(test)]
 mod tests {
-    use rand::prelude::*;
     use super::*;
+    use rand::prelude::*;
 
     #[test]
     fn test_shuffle() {
