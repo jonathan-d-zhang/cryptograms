@@ -1,7 +1,5 @@
 //! This module defines the public interface for the API.
 
-#![warn(missing_docs)]
-
 #[macro_use]
 extern crate juniper;
 use std::env;
@@ -14,6 +12,8 @@ use mount::Mount;
 
 mod ciphers;
 mod quotes;
+mod cryptogram;
+use cryptogram::{Cryptogram, Length, Type};
 
 struct Query;
 
@@ -27,10 +27,10 @@ impl Query {
     /// Request a new ciphertext.
     fn cryptogram(
         plaintext: Option<String>,
-        length: Option<ciphers::Length>,
-        r#type: Option<ciphers::Type>,
-    ) -> ciphers::Cryptogram {
-        ciphers::Cryptogram::new(plaintext, length, r#type)
+        length: Option<Length>,
+        r#type: Option<Type>,
+    ) -> Cryptogram {
+        Cryptogram::new(plaintext, length, r#type)
     }
 }
 

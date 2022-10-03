@@ -1,4 +1,4 @@
-use crate::ciphers::Length;
+use crate::cryptogram::Length;
 use juniper::serde::Deserialize;
 use lazy_static::lazy_static;
 use rand::prelude::*;
