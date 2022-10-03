@@ -1,3 +1,7 @@
+//! This module defines the public interface for the API.
+
+#![warn(missing_docs)]
+
 #[macro_use]
 extern crate juniper;
 use std::env;
@@ -34,6 +38,7 @@ fn context_factory(_: &mut Request) -> IronResult<()> {
     Ok(())
 }
 
+/// Output the current GraphQL schema.
 pub fn print_schema() {
     use juniper::RootNode;
     let schema = RootNode::new(
@@ -44,6 +49,7 @@ pub fn print_schema() {
     println!("{}", schema.as_schema_language());
 }
 
+/// Start the GraphQL server.
 pub fn make_server() {
     let mut mount = Mount::new();
 

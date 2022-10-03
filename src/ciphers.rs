@@ -1,15 +1,14 @@
-#![warn(missing_docs)]
-
 use super::quotes;
 use rand::prelude::*;
 
+/// Lowercase alphabet.
 const ALPHABET: [u8; 26] = *b"abcdefghijklmnopqrstuvwxyz";
 
-#[derive(GraphQLEnum, Copy, Clone)]
 /// Describe the type of cipher used to encrypt a [`Cryptogram`]
 ///
 /// Each of the variants should have an accompanying function with a lowercased name.
 /// For example, [`Identity`] has the function [`identity`]
+#[derive(GraphQLEnum, Copy, Clone)]
 pub enum Type {
     /// Returns the plaintext unchanged. See [`identity`] for more details.
     Identity,
@@ -19,10 +18,10 @@ pub enum Type {
     Aristocrat,
 }
 
-#[derive(GraphQLEnum, Copy, Clone)]
 /// Describe the length of a quotation concisely.
 ///
 /// The ranges for each variant are start inclusive and end exclusive.
+#[derive(GraphQLEnum, Copy, Clone)]
 pub enum Length {
     /// Quotations ranging from 60 to 90 bytes.
     Short,
@@ -39,10 +38,8 @@ pub struct Cryptogram {
     #[graphql(skip)]
     /// The unencrypted text.
     plaintext: String,
-    #[graphql(skip)]
     /// The type of cipher used.
     r#type: Type,
-    #[graphql(skip)]
     /// The length of the plaintext.
     length: Length,
     /// The author of the quote.
@@ -53,26 +50,20 @@ impl Cryptogram {
     /// Create a Cryptogram from plaintext, length, and type
     ///
     /// If plaintext is not given, then a random quotation is selected with
-    /// [`quotes::fetch_quote`]. The default `length` is [`Length::Medium`]. The default `r#type`
+    /// [`quotes::fetch_quote`]. The default `length` is [`Length::Medium`] and the default `r#type`
     /// is [`Type::Identity`], though this may change in the future.
     pub fn new(plaintext: Option<String>, length: Option<Length>, r#type: Option<Type>) -> Self {
         use Type::*;
-        let r#type = r#type.unwrap_or_else(|| Identity);
+        let r#type = r#type.unwrap_or(Identity);
 
-        let cipher = match r#type {
-            Identity => identity,
-            Rot13 => rot13,
-            Aristocrat => aristocrat,
-        };
-
-        let length = length.unwrap_or_else(|| Length::Medium);
+        let length = length.unwrap_or(Length::Medium);
 
         let quote = match plaintext {
             Some(t) => quotes::Quote::new(t, None),
             None => quotes::fetch_quote(length),
         };
 
-        let ciphertext = cipher(&quote.text, &mut thread_rng());
+        let ciphertext = encrypt(&quote.text, r#type);
 
         Self {
             plaintext: quote.text,
@@ -84,14 +75,15 @@ impl Cryptogram {
     }
 }
 
-/// Convenience function to convert a char to a u8
-const fn ord(chr: char) -> u8 {
-    chr as u8
-}
+/// Wrapper function to call a specific cipher by [`Type`].
+fn encrypt(plaintext: &str, cipher_type: Type) -> String {
+    use Type::*;
 
-/// Convenience function to convert a u8 to a char
-const fn chr(ord: u8) -> char {
-    ord as char
+    match cipher_type {
+        Identity => identity(plaintext),
+        Rot13 => rot13(plaintext),
+        Aristocrat => aristocrat(plaintext, &mut thread_rng()),
+    }
 }
 
 /// Adjust the case of ord to match the case of to_match
@@ -101,14 +93,14 @@ fn match_case(ord: u8, to_match: u8) -> u8 {
 }
 
 /// An identity function. Returns the input string unchanged.
-fn identity<R: Rng + ?Sized>(s: &str, _: &mut R) -> String {
+fn identity(s: &str) -> String {
     s.to_string()
 }
 
 /// A shift cipher.
 ///
 /// The cipher shifts each letter by 13. It is essentially a Caeser cipher but with a fixed shift.
-fn rot13<R: Rng + ?Sized>(s: &str, _: &mut R) -> String {
+fn rot13(s: &str) -> String {
     let mut out = Vec::with_capacity(s.len());
 
     for b in s.bytes() {
@@ -155,7 +147,7 @@ where
 mod tests {
     use super::*;
 
-    static TEST_TEXT: &'static str =
+    static TEST_TEXT: &str =
         "abcdefghijklmnopqrstuvwxyz 0123456789-!'\".ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     mod mock_rng;
@@ -163,7 +155,7 @@ mod tests {
 
     #[test]
     fn test_rot13() {
-        let res = rot13(TEST_TEXT, &mut MockRng);
+        let res = rot13(TEST_TEXT);
 
         assert_eq!(
             res,

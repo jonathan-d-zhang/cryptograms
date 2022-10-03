@@ -2,7 +2,7 @@ use crate::ciphers::Length;
 use juniper::serde::Deserialize;
 use lazy_static::lazy_static;
 use rand::prelude::*;
-use serde_json;
+
 
 lazy_static! {
     static ref QUOTES: Vec<SerQuote> = {
