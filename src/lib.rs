@@ -24,6 +24,16 @@ impl Query {
         "0.1"
     }
 
+    /// Request plaintext for a specific cryptogram by token.
+    fn plaintext(token: String) -> &str {
+        "the cipher"
+    }
+}
+
+struct Mutation;
+
+#[graphql_object]
+impl Mutation {
     /// Request a new ciphertext.
     fn cryptogram(
         plaintext: Option<String>,

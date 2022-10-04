@@ -33,16 +33,15 @@ pub enum Length {
 #[derive(GraphQLObject)]
 pub struct Cryptogram {
     /// The encrypted text.
-    ciphertext: String,
-    #[graphql(skip)]
-    /// The unencrypted text.
-    plaintext: String,
+    pub ciphertext: String,
     /// The type of cipher used.
-    r#type: Type,
+    pub r#type: Type,
     /// The length of the plaintext.
-    length: Length,
+    pub length: Length,
     /// The author of the quote.
-    author: Option<String>,
+    pub author: Option<String>,
+    /// Token to request the plaintext.
+    pub token: String,
 }
 
 
@@ -66,11 +65,11 @@ impl Cryptogram {
         let ciphertext = encrypt(&quote.text, r#type);
 
         Self {
-            plaintext: quote.text,
             ciphertext,
             r#type,
             length,
             author: quote.author,
+            token: "e".into(),
         }
     }
 }
