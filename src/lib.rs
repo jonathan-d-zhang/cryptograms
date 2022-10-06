@@ -53,7 +53,7 @@ pub fn print_schema() {
     use juniper::RootNode;
     let schema = RootNode::new(
         Query,
-        EmptyMutation::<()>::new(),
+        Mutation,
         EmptySubscription::<()>::new(),
     );
     println!("{}", schema.as_schema_language());
@@ -66,7 +66,7 @@ pub fn make_server() {
     let graphql_endpoint = <GraphQLHandler<_, _, _, _, _, DefaultScalarValue>>::new(
         context_factory,
         Query,
-        EmptyMutation::<()>::new(),
+        Mutation,
         EmptySubscription::<()>::new(),
     );
 

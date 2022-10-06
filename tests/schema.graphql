@@ -1,28 +1,52 @@
 type Cryptogram {
   "The encrypted text."
   ciphertext: String!
+  "The type of cipher used."
+  type: Type!
+  "The length of the plaintext."
+  length: Length!
   "The author of the quote."
   author: String
+  "Token to request the plaintext."
+  token: String!
+}
+
+type Mutation {
+  "Request a new ciphertext."
+  cryptogram(plaintext: String, length: Length, type: Type): Cryptogram!
 }
 
 type Query {
   "The api version."
   apiVersion: String!
-  "Request a new ciphertext."
-  cryptogram(plaintext: String, length: Length, type: Type): Cryptogram!
+  "Request plaintext for a specific cryptogram by token."
+  plaintext(token: String!): String!
 }
 
+"""
+  Describe the type of cipher used to encrypt a [`Cryptogram`]
+
+  Each of the variants should have an accompanying function with a lowercased name.
+  For example, [`Identity`] has the function [`crate::ciphers::identity`].
+"""
 enum Type {
-  "Returns the plaintext unchanged." IDENTITY
-  "Shift letters by 13." ROT13
+  "Returns the plaintext unchanged. See [`crate::ciphers::identity`] for more details." IDENTITY
+  "Shift letters by 13. See [`crate::ciphers::rot13`] for more details." ROT13
+  "Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details." ARISTOCRAT
 }
 
+"""
+  The length of a cipher.
+
+  The ranges for each variant are start inclusive and end exclusive.
+"""
 enum Length {
-  SHORT
-  MEDIUM
-  LONG
+  "Quotations ranging from 60 to 90 bytes." SHORT
+  "Quotations ranging from 90 to 120 bytes." MEDIUM
+  "Quotations ranging from 120 to 150 bytes." LONG
 }
 
 schema {
   query: Query
+  mutation: Mutation
 }

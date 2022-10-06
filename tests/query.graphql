@@ -1,7 +1,10 @@
-query Cryptogram($plaintext: String, $type: Type, $length: Length) {
+mutation Cryptogram($plaintext: String, $type: Type, $length: Length) {
   cryptogram(plaintext: $plaintext, type: $type, length: $length) {
     ciphertext,
+    type,
+    length,
     author,
+    token,
   }
 }
 
