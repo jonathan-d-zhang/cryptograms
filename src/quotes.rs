@@ -3,7 +3,6 @@ use juniper::serde::Deserialize;
 use lazy_static::lazy_static;
 use rand::prelude::*;
 
-
 lazy_static! {
     static ref QUOTES: Vec<SerQuote> = {
         let file_contents = std::fs::read_to_string(

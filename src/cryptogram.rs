@@ -13,6 +13,8 @@ pub enum Type {
     Identity,
     /// Shift letters by 13. See [`crate::ciphers::rot13`] for more details.
     Rot13,
+    /// Shift letters by a random amount. See [`crate::ciphers::caeser`] for more details.
+    Caesar,
     /// Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details.
     Aristocrat,
 }
@@ -43,7 +45,6 @@ pub struct Cryptogram {
     /// Token to request the plaintext.
     pub token: String,
 }
-
 
 impl Cryptogram {
     /// Create a Cryptogram from plaintext, length, and type

@@ -11,8 +11,8 @@ use logger::Logger;
 use mount::Mount;
 
 mod ciphers;
-mod quotes;
 mod cryptogram;
+mod quotes;
 use cryptogram::{Cryptogram, Length, Type};
 
 struct Query;
@@ -51,11 +51,7 @@ fn context_factory(_: &mut Request) -> IronResult<()> {
 /// Output the current GraphQL schema.
 pub fn print_schema() {
     use juniper::RootNode;
-    let schema = RootNode::new(
-        Query,
-        Mutation,
-        EmptySubscription::<()>::new(),
-    );
+    let schema = RootNode::new(Query, Mutation, EmptySubscription::<()>::new());
     println!("{}", schema.as_schema_language());
 }
 

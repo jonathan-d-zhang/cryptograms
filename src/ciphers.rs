@@ -2,35 +2,43 @@
 
 #![warn(missing_docs)]
 
-use rand::prelude::*;
 use super::cryptogram::Type;
 use super::cryptogram::Type::*;
+use rand::prelude::*;
 
 /// Lowercase alphabet.
 const ALPHABET: [u8; 26] = *b"abcdefghijklmnopqrstuvwxyz";
 
-
 /// Adjust the case of ord to match the case of to_match
-fn match_case(ord: u8, to_match: u8) -> u8 {
+const fn match_case(ord: u8, to_match: u8) -> u8 {
     let is_lower = (to_match >> 5) & 1;
     ord & !(1 << 5) | (is_lower << 5)
 }
 
 /// Wrapper function to call a specific cipher by [`Type`].
 pub fn encrypt(plaintext: &str, cipher_type: Type) -> String {
+    let mut rng = thread_rng();
     match cipher_type {
         Identity => identity(plaintext),
         Rot13 => rot13(plaintext),
-        Aristocrat => aristocrat(plaintext, &mut thread_rng()),
+        Caesar => caeser(plaintext, &mut rng),
+        Aristocrat => aristocrat(plaintext, &mut rng),
     }
 }
 
-/// An identity function. Returns the input string unchanged.
+/// Returns the input string unchanged.
 fn identity(s: &str) -> String {
     s.to_string()
 }
 
-/// A shift cipher.
+/// Convenience function to shift `b` by `by` places.
+const fn shift_letter(b: u8, by: u8) -> u8 {
+    let offset = match_case(b'a', b);
+
+    (b - offset + by) % 26 + offset
+}
+
+/// Shift each letter by 13.
 ///
 /// The cipher shifts each letter by 13. It is essentially a Caeser cipher but with a fixed shift.
 fn rot13(s: &str) -> String {
@@ -38,10 +46,7 @@ fn rot13(s: &str) -> String {
 
     for b in s.bytes() {
         if b.is_ascii_alphabetic() {
-            out.push(match_case(
-                (b.to_ascii_uppercase() - b'A' + 13) % 26 + b'A',
-                b,
-            ));
+            out.push(shift_letter(b, 13));
         } else {
             out.push(b);
         }
@@ -50,7 +55,27 @@ fn rot13(s: &str) -> String {
     String::from_utf8(out).unwrap()
 }
 
-/// A monoalphabetic substitution cipher.
+/// Randomly choose a shift `s` and shift each letter by `s`.
+fn caeser<R>(s: &str, rng: &mut R) -> String
+where
+    R: Rng + ?Sized,
+{
+    let mut out = Vec::with_capacity(s.len());
+
+    let shift = rng.next_u32() as u8;
+
+    for b in s.bytes() {
+        if b.is_ascii_alphabetic() {
+            out.push(shift_letter(b, shift));
+        } else {
+            out.push(b);
+        }
+    }
+
+    String::from_utf8(out).unwrap()
+}
+
+/// Monoalphabetic substitution cipher.
 ///
 /// The cipher uniquely maps each letter in the alphabet to a different letter in the alphabet.
 /// This mapping is then used to map the input string to the output string.
@@ -97,6 +122,13 @@ mod tests {
     }
 
     #[test]
+    fn test_caesar() {
+        // The mock shift is 0
+        let res = caeser(TEST_TEXT, &mut MockRng);
+        assert_eq!(res, TEST_TEXT)
+    }
+
+    #[test]
     fn test_aristocrat() {
         let res = aristocrat(TEST_TEXT, &mut MockRng);
         let ans = "bcdefghijklmnopqrstuvwxyza 0123456789-!'\".BCDEFGHIJKLMNOPQRSTUVWXYZA";
@@ -129,6 +161,24 @@ mod tests {
                 match_case(inp, inp.to_ascii_lowercase()),
                 inp.to_ascii_lowercase()
             );
+        }
+    }
+
+    #[test]
+    fn test_shift_letter() {
+        // build a rotated alphabet
+        let mut expected = Vec::new();
+        for i in b't'..=b'z' {
+            expected.push(i);
+        }
+        for i in b'a'..b't' {
+            expected.push(i);
+        }
+
+        println!("{:?}", expected);
+        let initial = b't';
+        for i in 0..26 {
+            assert_eq!(shift_letter(initial, i), expected[i as usize]);
         }
     }
 }

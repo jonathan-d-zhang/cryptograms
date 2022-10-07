@@ -34,4 +34,9 @@ mod tests {
 
         assert_eq!(input, expected);
     }
+
+    #[test]
+    fn test_next_u32() {
+        assert_eq!(MockRng.next_u32(), 0)
+    }
 }
