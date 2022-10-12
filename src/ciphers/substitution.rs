@@ -2,7 +2,7 @@
 //!
 //! [`rot13`], [`caeser`], [`aristocrat`]
 
-use super::{shift_letter, match_case, ALPHABET};
+use super::{match_case, shift_letter, ALPHABET};
 use rand::prelude::*;
 
 /// Shift each letter by 13.
@@ -70,8 +70,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::ciphers::tests::MockRng;
     use super::*;
+    use crate::ciphers::tests::MockRng;
 
     static TEST_TEXT: &str =
         "abcdefghijklmnopqrstuvwxyz 0123456789-!'\".ABCDEFGHIJKLMNOPQRSTUVWXYZ";

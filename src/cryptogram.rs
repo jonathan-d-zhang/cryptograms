@@ -17,6 +17,7 @@ pub enum Type {
     Caesar,
     /// Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details.
     Aristocrat,
+    Morbit,
 }
 
 /// The length of a cipher.
@@ -52,7 +53,12 @@ impl Cryptogram {
     /// If plaintext is not given, then a random quotation is selected with
     /// [`crate::quotes::fetch_quote`]. The default `length` is [`Length::Medium`] and the default `r#type`
     /// is [`Type::Identity`], though this may change in the future.
-    pub fn new(plaintext: Option<String>, length: Option<Length>, r#type: Option<Type>) -> Self {
+    pub fn new(
+        plaintext: Option<String>,
+        length: Option<Length>,
+        r#type: Option<Type>,
+        key: Option<String>,
+    ) -> Self {
         use Type::*;
         let r#type = r#type.unwrap_or(Identity);
 
@@ -63,7 +69,7 @@ impl Cryptogram {
             None => quotes::fetch_quote(length),
         };
 
-        let ciphertext = encrypt(&quote.text, r#type);
+        let ciphertext = encrypt(&quote.text, r#type, key);
 
         Self {
             ciphertext,

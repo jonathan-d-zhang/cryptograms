@@ -1,10 +1,15 @@
-//! Definition of the two morse code based ciphers, Morbit and Pollux
+mod morbit;
+pub use morbit::morbit;
 
-use super::MORSE_ALPHABET;
+/// Morse alphabet.
+const MORSE_ALPHABET: [&str; 26] = [
+    ".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--",
+    "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--..",
+];
 
 /// Encode an ascii letter in morse code.
 ///
-/// In the future, numbers and punctuation may be supported.
+/// Currently only supports letters.
 fn morse_encode(b: u8) -> String {
     if b.is_ascii_alphabetic() {
         let index = b.to_ascii_lowercase() - b'a';

@@ -5,7 +5,7 @@ extern crate juniper;
 use std::env;
 
 use iron::prelude::*;
-use juniper::{DefaultScalarValue, EmptyMutation, EmptySubscription};
+use juniper::{DefaultScalarValue, EmptySubscription};
 use juniper_iron::{GraphQLHandler, GraphiQLHandler};
 use logger::Logger;
 use mount::Mount;
@@ -35,12 +35,15 @@ struct Mutation;
 #[graphql_object]
 impl Mutation {
     /// Request a new ciphertext.
+    ///
+    /// The argument `key` does nothing if the chosen `Type` does not need a key.
     fn cryptogram(
         plaintext: Option<String>,
         length: Option<Length>,
         r#type: Option<Type>,
+        key: Option<String>,
     ) -> Cryptogram {
-        Cryptogram::new(plaintext, length, r#type)
+        Cryptogram::new(plaintext, length, r#type, key)
     }
 }
 

@@ -12,9 +12,6 @@ mod substitution;
 /// Lowercase alphabet.
 const ALPHABET: [u8; 26] = *b"abcdefghijklmnopqrstuvwxyz";
 
-/// Morse alphabet.
-const MORSE_ALPHABET: [&str; 26] = [".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--.."];
-
 /// Adjust the case of ord to match the case of to_match
 const fn match_case(ord: u8, to_match: u8) -> u8 {
     let is_lower = (to_match >> 5) & 1;
@@ -34,13 +31,14 @@ fn identity(s: &str) -> String {
 }
 
 /// Wrapper function to call a specific cipher by [`Type`].
-pub fn encrypt(plaintext: &str, cipher_type: Type) -> String {
+pub fn encrypt(plaintext: &str, cipher_type: Type, key: Option<String>) -> String {
     let mut rng = thread_rng();
     match cipher_type {
         Identity => identity(plaintext),
         Rot13 => substitution::rot13(plaintext),
         Caesar => substitution::caeser(plaintext, &mut rng),
         Aristocrat => substitution::aristocrat(plaintext, &mut rng),
+        Morbit => morse::morbit(plaintext, key),
     }
 }
 
@@ -50,7 +48,6 @@ mod tests {
 
     mod mock_rng;
     pub use mock_rng::MockRng;
-
 
     #[test]
     fn test_match_case_same_case() {
