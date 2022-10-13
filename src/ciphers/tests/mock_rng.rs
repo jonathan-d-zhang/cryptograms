@@ -39,4 +39,17 @@ mod tests {
     fn test_next_u32() {
         assert_eq!(MockRng.next_u32(), 0)
     }
+
+    #[test]
+    fn test_next_u64() {
+        assert_eq!(MockRng.next_u64(), 0)
+    }
+
+    #[test]
+    fn test_fill_bytes() {
+        let mut arr = vec![0; 5];
+        MockRng.fill_bytes(&mut arr);
+
+        assert!(arr == vec![0; 5]);
+    }
 }
