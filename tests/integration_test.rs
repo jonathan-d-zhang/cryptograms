@@ -16,7 +16,6 @@ lazy_static! {
 
 fn setup() {
     SETUP.call_once(|| {
-        thread::spawn(|| {
             // setup tempfile for quotes
             println!("Temp dir {:?}", std::env::temp_dir());
             let tf = tempfile::Builder::new()
@@ -39,6 +38,7 @@ fn setup() {
                 "QUOTES_FILE",
                 path,
             );
+        thread::spawn(|| {
             cryptograms::make_server();
         });
         thread::sleep(std::time::Duration::from_secs(3));
