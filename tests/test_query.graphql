@@ -1,7 +1,0 @@
-query CipherQuery {
-  cipher
-}
-
-query VersionQuery {
-  apiVersion
-}

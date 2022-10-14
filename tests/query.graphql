@@ -1,0 +1,13 @@
+mutation Cryptogram($plaintext: String, $type: Type, $length: Length) {
+  cryptogram(plaintext: $plaintext, type: $type, length: $length) {
+    ciphertext,
+    type,
+    length,
+    author,
+    token,
+  }
+}
+
+query Version {
+  apiVersion
+}

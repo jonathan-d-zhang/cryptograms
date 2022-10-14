@@ -1,0 +1,59 @@
+name: Coverage
+
+on: push
+
+jobs:
+  Coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Cache Rust and project dependencies
+        id: cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: cargo-${{ hashFiles('Cargo.lock') }}
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          profile: minimal
+          components: llvm-tools-preview
+
+      - name: Install grcov
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: cargo install grcov
+
+      - name: Setup mold
+        uses: rui314/setup-mold@v1
+        with:
+          make-default: true
+
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-fail-fast
+        env:
+          RUSTFLAGS: "-Cinstrument-coverage"
+          LLVM_PROFILE_FILE: "cryptograms-%p-%m.profraw"
+
+
+      - name: Generate coverage data
+        run: |
+          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
+          echo "LCOV_PATH=lcov.info" >> $GITHUB_ENV
+
+      - name: Coveralls upload
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ${{ env.LCOV_PATH }}
