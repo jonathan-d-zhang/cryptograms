@@ -9,12 +9,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-
       - name: Cache Rust and project dependencies
         uses: actions/cache@v2
         with:
@@ -26,8 +20,21 @@ jobs:
             target/
           key: cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          profile: minimum
+          components: llvm-tools-preview
+
+      - name: Install grcov
+        run: cargo install grcov
+
       - name: Setup mold
         uses: rui314/setup-mold@v1
+        with:
+          make-default: true
 
       - name: Run tests
         uses: actions-rs/cargo@v1
@@ -39,12 +46,13 @@ jobs:
           RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
           RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
 
-      - name: Create coverage report
-        id: coverage
-        uses: actions-rs/grcov@v0.1
+      - name: Generate coverage data
+        run: |
+          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./target/debug/coverage
+          echo "LCOV_PATH={./target/debug/coverage/}" >> $GITHUB_ENV
 
       - name: Coveralls upload
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ${{ steps.coverage.outputs.report }}
+          path-to-lcov: ${{ env.LCOV_PATH }}
