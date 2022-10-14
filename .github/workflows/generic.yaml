@@ -1,0 +1,13 @@
+name: Coverage
+
+on:
+  push:
+    paths-ignore:
+      - "tests/**"
+      - "src/**"
+
+jobs:
+  Coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No change to coverage"'
