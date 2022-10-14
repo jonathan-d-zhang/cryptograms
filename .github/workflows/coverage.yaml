@@ -18,7 +18,6 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
           key: cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Rust
@@ -45,14 +44,14 @@ jobs:
           command: test
           args: --no-fail-fast --lib
         env:
-          CARGO_INCREMENTAL: '0'
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTFLAGS: "-Cinstrument-coverage"
+          LLVM_PROFILE_FILE: "cryptograms-%p-%m.profraw"
+
 
       - name: Generate coverage data
         run: |
-          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o lcov
-          echo "LCOV_PATH=lcov" >> $GITHUB_ENV
+          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
+          echo "LCOV_PATH=lcov.info" >> $GITHUB_ENV
 
       - name: Coveralls upload
         uses: coverallsapp/github-action@master
