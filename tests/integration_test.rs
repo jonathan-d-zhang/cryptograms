@@ -1,15 +1,40 @@
 /// Integration test
 ///
 /// This implements an extremely scuffed custom test harness in order to have setup and teardown
-/// functionality. It tries to emulate the output of libtest, but can't really handle anything
-/// other than `cargo test`.
+/// functionality. It tries to emulate the output of libtest, but can't handle any flags for `cargo
+/// test`.
+///
+/// This module implements a custom panic hook in order to delay the printing of failed assertions.
+///
+/// # How to write tests for this module
+/// - Tests in this file are not annotated with `#[test]`. Instead, they must be registered in [`TESTS`].
+/// - To print to stdout, tests use the [`stdout::Stdout`] struct and push lines with the
+/// [`stdout::Stdout::push`] method.
+/// attribute
+/// - Assertions must include the name of the test as a custom message
+/// - Tests should include the name of test as a custom message for the assertion. See the example
+/// for more detail.
+///
+/// # Example Test
+/// ```
+/// fn test() {
+///     let test_name = "test";
+///     let stdout = Stdout::new(test_name.into(), Arc::clone(STDOUT));
+///
+///     // each string added will be printed on a new line
+///     stdout.push("Logging some data");
+///
+///     assert_eq!(1 + 1, 2, "$test_case={}$", test_name)
+/// }
+/// ```
+/// The test case name must be provided in this exact format (`$test_case=test_name$`).
 #[macro_use]
 extern crate lazy_static;
 
 use graphql_client::{reqwest::post_graphql_blocking as post_graphql, GraphQLQuery};
 use reqwest::blocking::Client;
 use std::collections::HashMap;
-use std::panic;
+use std::panic::{self, PanicInfo};
 use std::process::ExitCode;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -17,36 +42,40 @@ use tempfile::TempPath;
 
 use regex::Regex;
 
+mod stdout;
+use stdout::Stdout;
+
 const URL: &str = "http://localhost:8080/graphql";
 const TEST_QUOTE: &str = "The quick brown fox jumps over the lazy dog. Can't-I'm<>12932. Cwm fjord bank glyphs vext quiz!";
 
-type StdoutMap = Arc<Mutex<HashMap<String, String>>>;
-
 lazy_static! {
+    /// Client for making requests to the API
     static ref CLIENT: Client = Client::new();
-    static ref STDOUT: StdoutMap = Arc::new(Mutex::new(HashMap::new()));
+    static ref STDOUT: stdout::StdoutMap = Arc::new(Mutex::new(HashMap::new()));
 }
 
+/// Stores tuples of test and test name
+static TESTS: &[(fn(), &str)] = &[
+    (test_api_version, "test_api_version"),
+    (
+        test_cryptogram_identity_medium,
+        "test_cryptogram_identity_medium",
+    ),
+    (
+        test_cryptogram_encrypt_identity,
+        "test_cryptogram_encrypt_identity",
+    ),
+];
+
 fn main() -> ExitCode {
-    let file_handle = setup();
+    let _file_handle = setup();
 
-    let tests: &[(fn(), &str)] = &[
-        (test_api_version, "test_api_version"),
-        (
-            test_cryptogram_identity_medium,
-            "test_cryptogram_identity_medium",
-        ),
-        (
-            test_cryptogram_encrypt_identity,
-            "test_cryptogram_encrypt_identity",
-        ),
-    ];
+    println!("\nrunning {} tests", TESTS.len());
 
-    println!("\nrunning {} tests", tests.len());
-
-    let mut errors = Vec::with_capacity(tests.len());
-    for (test, name) in tests.into_iter() {
-        let res = run_test(*test);
+    // Run the tests
+    let mut errors = Vec::with_capacity(TESTS.len());
+    for (test, name) in TESTS.into_iter() {
+        let res = panic::catch_unwind(test);
         let output = match res {
             Ok(_) => "\x1b[32mok\x1b[37m",
             Err(_) => {
@@ -57,8 +86,10 @@ fn main() -> ExitCode {
         println!("test {name} ... {output}");
     }
 
+    // Unregister our custom hook
     let _ = panic::take_hook();
 
+    // Print the stdouts of the failed tests
     if !errors.is_empty() {
         println!("\nfailures:");
         for &&name in &errors {
@@ -80,13 +111,11 @@ fn main() -> ExitCode {
     };
 
     println!(
-        "\ntest result: {}. {} passed; {} failed",
+        "\ntest result: {}. {} passed; {} failed\n",
         test_result,
-        tests.len() - errors.len(),
+        TESTS.len() - errors.len(),
         errors.len(),
     );
-
-    std::mem::drop(file_handle);
 
     if errors.is_empty() {
         ExitCode::SUCCESS
@@ -95,35 +124,57 @@ fn main() -> ExitCode {
     }
 }
 
-struct Stdout {
-    name: String,
-    buf: Vec<u8>,
-    map: StdoutMap,
-}
+/// Custom panic hook that logs failed assertions instead of printing them
+///
+/// If a test assertion panics, the hook logs the message in [`STDOUT`] so it can be displayed with the
+/// rest of the stdout for that test case. This does not affect the printing of other panics.
+fn hook(info: &PanicInfo) {
+    let t = info.payload();
+    let location_data = if let Some(d) = info.location() {
+        format!("{}:{}:{}", d.file(), d.line(), d.column())
+    } else {
+        "No location data".into()
+    };
 
-impl Stdout {
-    pub fn new(name: String, map: StdoutMap) -> Self {
-        Self {
-            name,
-            buf: Vec::new(),
-            map,
+    let message = if let Some(p) = t.downcast_ref::<String>() {
+        p
+    } else if let Some(p) = t.downcast_ref::<&str>() {
+        p
+    } else {
+        ""
+    };
+
+    let mut parts = Vec::new();
+    parts.push(message);
+    parts.push(&location_data);
+
+    let pat = Regex::new(r"\$test_name=(.+)\$").unwrap();
+    let captures = pat.captures(message);
+    match captures {
+        // If the regex matches, then this panic was raised by a test assertion.
+        // Append the message onto the existing output for this test.
+        Some(c) => {
+            let test_name = c.get(1).expect("Couldn't find match");
+
+            let mut map = STDOUT.lock().unwrap();
+            let entry = map
+                .entry(test_name.as_str().into())
+                .or_insert(String::new());
+            entry.push_str(&format!("\n{}", parts.join("\n")));
+        }
+        // Else, it was a normal panic, just print it normally
+        None => {
+            eprintln!("{}\n{}", message, location_data);
         }
     }
 }
 
-impl Drop for Stdout {
-    fn drop(&mut self) {
-        self.map.lock().unwrap().insert(
-            self.name.clone(),
-            String::from_utf8(self.buf.clone()).unwrap(),
-        );
-    }
-}
-
-fn run_test(test: fn()) -> Result<(), Box<dyn std::any::Any + Send>> {
-    panic::catch_unwind(test)
-}
-
+/// Setup tests
+///
+/// This function does a few setup tasks.
+/// - Loads a tempfile for test quotes.
+/// - Sets our custom panic hook.
+/// - Start the server
 fn setup() -> TempPath {
     // setup tempfile for quotes
     let tf = tempfile::Builder::new()
@@ -134,6 +185,7 @@ fn setup() -> TempPath {
         .unwrap();
 
     let path = tf.path();
+
     println!("Creating temp file at {:?}", path);
 
     std::fs::write(&path,
@@ -143,50 +195,18 @@ fn setup() -> TempPath {
     .unwrap();
 
     std::env::set_var("QUOTES_FILE", path);
+
     thread::spawn(|| {
         cryptograms::make_server();
     });
+
+    // give some time for server to start up
     thread::sleep(std::time::Duration::from_secs(3));
 
-    // set a hook that logs the data instead of printing immediately
-    panic::set_hook(Box::new(|info| {
-        let t = info.payload();
-        let location_data = if let Some(d) = info.location() {
-            format!("{}:{}:{}", d.file(), d.line(), d.column())
-        } else {
-            "No location data".into()
-        };
+    // set panics to use our custom hook
+    panic::set_hook(Box::new(hook));
 
-        let message = if let Some(p) = t.downcast_ref::<String>() {
-            p
-        } else if let Some(p) = t.downcast_ref::<&str>() {
-            p
-        } else {
-            ""
-        };
-
-        let mut parts = Vec::new();
-        parts.push(message);
-        parts.push(&location_data);
-        //        println!("{:?}", parts);
-        let pat = Regex::new(r"\$test_name=(.+)\$").unwrap();
-        let captures = pat.captures(message);
-        match captures {
-            Some(c) => {
-                let test_name = c.get(1).expect("Couldn't find match");
-
-                let mut map = STDOUT.lock().unwrap();
-                let entry = map
-                    .entry(test_name.as_str().into())
-                    .or_insert(String::new());
-                entry.push_str(&format!("\n{}", parts.join("\n")));
-            }
-            None => {
-                eprintln!("{}\n{}", message, location_data);
-            }
-        }
-    }));
-
+    // return a temp path so our temp file stays alive
     tf.into_temp_path()
 }
 
@@ -214,9 +234,7 @@ fn test_api_version() {
 
     let data: version::ResponseData = response_body.data.unwrap();
 
-    stdout
-        .buf
-        .extend_from_slice(format!("{:?}", data).as_bytes());
+    stdout.push(format!("{:?}", data));
 
     assert_eq!(data.api_version, "0.1", "$test_name={}$", test_name)
 }
@@ -234,9 +252,7 @@ fn test_cryptogram_identity_medium() {
 
     let data: cryptogram::ResponseData = response_body.data.unwrap();
 
-    stdout
-        .buf
-        .extend_from_slice(format!("{:?}", data).as_bytes());
+    stdout.push(format!("{:?}", data));
 
     assert_eq!(
         data.cryptogram.ciphertext,
@@ -257,9 +273,8 @@ fn test_cryptogram_encrypt_identity() {
     let response_body = post_graphql::<Cryptogram, _>(&CLIENT, URL, variables).unwrap();
 
     let data: cryptogram::ResponseData = response_body.data.unwrap();
-    stdout
-        .buf
-        .extend_from_slice(format!("{:?}", data).as_bytes());
+
+    stdout.push(format!("{:?}", data));
 
     assert_eq!(
         data.cryptogram.ciphertext,
