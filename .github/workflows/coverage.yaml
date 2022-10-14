@@ -15,6 +15,17 @@ jobs:
           toolchain: nightly
           override: true
 
+      - name: Cache Rust and project dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Setup mold
         uses: rui314/setup-mold@v1
 
