@@ -18,7 +18,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-${{ hashFiles('Cargo.lock') }}
 
       - name: Install Rust
         if: steps.cache.outputs.cache-hit != 'true'
@@ -42,7 +42,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --no-fail-fast --lib
+          args: --no-fail-fast
         env:
           RUSTFLAGS: "-Cinstrument-coverage"
           LLVM_PROFILE_FILE: "cryptograms-%p-%m.profraw"
