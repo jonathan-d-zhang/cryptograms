@@ -12,8 +12,12 @@ type Cryptogram {
 }
 
 type Mutation {
-  "Request a new ciphertext."
-  cryptogram(plaintext: String, length: Length, type: Type): Cryptogram!
+  """
+    Request a new ciphertext.
+
+    The argument `key` does nothing if the chosen `Type` does not need a key.
+  """
+  cryptogram(plaintext: String, length: Length, type: Type, key: String): Cryptogram!
 }
 
 type Query {
@@ -32,7 +36,9 @@ type Query {
 enum Type {
   "Returns the plaintext unchanged. See [`crate::ciphers::identity`] for more details." IDENTITY
   "Shift letters by 13. See [`crate::ciphers::rot13`] for more details." ROT13
+  "Shift letters by a random amount. See [`crate::ciphers::caeser`] for more details." CAESAR
   "Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details." ARISTOCRAT
+  MORBIT
 }
 
 """
