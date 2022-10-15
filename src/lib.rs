@@ -38,12 +38,12 @@ impl Mutation {
     ///
     /// The argument `key` does nothing if the chosen `Type` does not need a key.
     fn cryptogram(
-        plaintext: Option<String>,
+        ciphertext: Option<String>,
         length: Option<Length>,
         r#type: Option<Type>,
         key: Option<String>,
     ) -> Cryptogram {
-        Cryptogram::new(plaintext, length, r#type, key)
+        Cryptogram::new(ciphertext, length, r#type, key)
     }
 }
 

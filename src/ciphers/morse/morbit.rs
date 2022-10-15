@@ -11,7 +11,7 @@ where
     R: Rng + ?Sized,
 {
     (0..9)
-        .map(|_| (rng.next_u32() as u8 + b'a') as char)
+        .map(|_| ((rng.next_u32() as u8) % 26 + b'a') as char)
         .collect()
 }
 
@@ -39,7 +39,9 @@ pub fn morbit(s: &str, key: Option<String>) -> String {
     let mut chars = Vec::new();
     for word in s.split_ascii_whitespace() {
         for b in word.bytes() {
-            chars.push(morse_encode(b));
+            if b.is_ascii_alphabetic() {
+                chars.push(morse_encode(b));
+            }
         }
         words.push(chars.join("/"));
         chars.clear();
