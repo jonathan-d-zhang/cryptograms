@@ -89,13 +89,13 @@ mod tests {
     #[test]
     fn test_caesar() {
         // The mock shift is 0, so it's the same as an identity function.
-        let res = caeser(TEST_TEXT, &mut MockRng);
+        let res = caeser(TEST_TEXT, &mut MockRng::new());
         assert_eq!(res, TEST_TEXT)
     }
 
     #[test]
     fn test_aristocrat() {
-        let res = aristocrat(TEST_TEXT, &mut MockRng);
+        let res = aristocrat(TEST_TEXT, &mut MockRng::new());
         let ans = "bcdefghijklmnopqrstuvwxyza 0123456789-!'\".BCDEFGHIJKLMNOPQRSTUVWXYZA";
         assert_eq!(res, ans);
     }

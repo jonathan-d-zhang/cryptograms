@@ -76,9 +76,9 @@ mod tests {
 
     #[test]
     fn test_generate_key() {
-        let k = generate_key(&mut MockRng);
+        let k = generate_key(&mut MockRng::new());
 
-        assert_eq!(k, "aaaaaaaaa")
+        assert_eq!(k, "abcdefghi")
     }
 
     #[test]
