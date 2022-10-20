@@ -17,6 +17,7 @@ RUN cargo build
 FROM debian:bullseye-slim as dev
 
 COPY --from=base /cryptograms/target/debug/cryptograms ./cryptograms
+COPY quotes.json quotes.json
 
 CMD ["./cryptograms"]
 

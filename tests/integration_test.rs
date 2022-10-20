@@ -62,7 +62,7 @@ static TESTS: &[(fn(), &str)] = &[
 ];
 
 fn main() -> ExitCode {
-    let _file_handle = setup();
+    let (_file_handle, server_stdout) = setup();
     println!("\nrunning {} tests", TESTS.len());
 
     // Run the tests
@@ -108,6 +108,8 @@ fn main() -> ExitCode {
         errors.len(),
     );
 
+    println!("{}", String::from_utf8(server_stdout.lock().unwrap().clone()).unwrap());
+
     if errors.is_empty() {
         ExitCode::SUCCESS
     } else {
@@ -137,7 +139,7 @@ fn run_test(f: fn()) -> Result<(), Vec<u8>> {
 /// This function does a few setup tasks.
 /// - Loads a tempfile for test quotes.
 /// - Start the server
-fn setup() -> TempPath {
+fn setup() -> (TempPath, Arc<Mutex<Vec<u8>>>) {
     let _ = env_logger::builder()
         .is_test(true)
         .target(env_logger::Target::Stdout)
@@ -163,15 +165,19 @@ fn setup() -> TempPath {
 
     std::env::set_var("QUOTES_FILE", path);
 
-    thread::spawn(|| {
+    let stdout = Arc::new(Mutex::new(Vec::new()));
+    let clone = Arc::clone(&stdout);
+    thread::spawn(move || {
+        set_output_capture(Some(clone));
+
         cryptograms::make_server();
     });
 
-    // give some time for server to start up
+    // give some time for the server to start up
     thread::sleep(std::time::Duration::from_secs(3));
 
     // return a temp path so our temp file stays alive
-    tf.into_temp_path()
+    (tf.into_temp_path(), stdout)
 }
 
 #[derive(GraphQLQuery)]

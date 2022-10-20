@@ -13,7 +13,7 @@ lazy_static! {
         )
         .unwrap();
 
-        log::info!("Loading quotes from {:?}", quotes_file);
+        log::info!("Loading quotes from {:?}", quotes_file.unwrap());
         serde_json::from_str(&file_contents).unwrap()
     };
 }

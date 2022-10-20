@@ -6,4 +6,7 @@ services:
     ports:
       - "8080:8080"
     tty: true
+    environment:
+      - RUST_LOG=debug
+      - QUOTES_FILE=quotes.json
 

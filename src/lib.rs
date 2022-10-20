@@ -80,5 +80,7 @@ pub fn make_server() {
     chain.link_after(logger_after);
 
     let host = env::var("LISTEN").unwrap_or_else(|_| "0.0.0.0:8080".into());
+
+    log::info!("Starting server on {}.", host);
     Iron::new(chain).http(host.as_str()).unwrap();
 }
