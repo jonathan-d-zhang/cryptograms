@@ -7,7 +7,7 @@ use super::quotes;
 ///
 /// Each of the variants should have an accompanying function with a lowercased name.
 /// For example, [`Identity`] has the function [`crate::ciphers::identity`].
-#[derive(GraphQLEnum, Copy, Clone)]
+#[derive(GraphQLEnum, Debug, Copy, Clone)]
 pub enum Type {
     /// Returns the plaintext unchanged. See [`crate::ciphers::identity`] for more details.
     Identity,
@@ -23,7 +23,7 @@ pub enum Type {
 /// The length of a cipher.
 ///
 /// The ranges for each variant are start inclusive and end exclusive.
-#[derive(GraphQLEnum, Copy, Clone)]
+#[derive(GraphQLEnum, Debug, Copy, Clone)]
 pub enum Length {
     /// Quotations ranging from 60 to 90 bytes.
     Short,

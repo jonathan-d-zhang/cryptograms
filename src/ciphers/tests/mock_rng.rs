@@ -8,9 +8,7 @@ pub struct MockRng {
 
 impl MockRng {
     pub fn new() -> Self {
-        Self {
-            state: 0,
-        }
+        Self { state: 0 }
     }
 }
 

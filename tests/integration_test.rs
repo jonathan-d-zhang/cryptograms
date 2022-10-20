@@ -1,17 +1,14 @@
+#![feature(internal_output_capture)]
+
 /// Integration test
 ///
 /// This implements an extremely scuffed custom test harness in order to have setup and teardown
 /// functionality. It tries to emulate the output of libtest, but can't handle any flags for `cargo
 /// test`.
 ///
-/// This module implements a custom panic hook in order to delay the printing of failed assertions.
 ///
 /// # How to write tests for this module
 /// - Tests in this file are not annotated with `#[test]`. Instead, they must be registered in [`TESTS`].
-/// - To print to stdout, tests use the [`stdout::Stdout`] struct and push lines with the
-/// [`stdout::Stdout::push`] method.
-/// attribute
-/// - Assertions must include the name of the test as a custom message
 /// - Tests should include the name of test as a custom message for the assertion. See the example
 /// for more detail.
 ///
@@ -28,22 +25,20 @@
 /// }
 /// ```
 /// The test case name must be provided in this exact format (`$test_case=test_name$`).
+
 #[macro_use]
 extern crate lazy_static;
 
+use env_logger;
 use graphql_client::{reqwest::post_graphql_blocking as post_graphql, GraphQLQuery};
+use log;
 use reqwest::blocking::Client;
-use std::collections::HashMap;
-use std::panic::{self, PanicInfo};
+use std::panic::catch_unwind;
 use std::process::ExitCode;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::io::set_output_capture;
 use tempfile::TempPath;
-
-use regex::Regex;
-
-mod stdout;
-use stdout::Stdout;
 
 const URL: &str = "http://localhost:8080/graphql";
 const TEST_QUOTE: &str = "The quick brown fox jumps over the lazy dog. Can't-I'm<>12932. Cwm fjord bank glyphs vext quiz!";
@@ -51,7 +46,6 @@ const TEST_QUOTE: &str = "The quick brown fox jumps over the lazy dog. Can't-I'm
 lazy_static! {
     /// Client for making requests to the API
     static ref CLIENT: Client = Client::new();
-    static ref STDOUT: stdout::StdoutMap = Arc::new(Mutex::new(HashMap::new()));
 }
 
 /// Stores tuples of test and test name
@@ -69,38 +63,35 @@ static TESTS: &[(fn(), &str)] = &[
 
 fn main() -> ExitCode {
     let _file_handle = setup();
-
     println!("\nrunning {} tests", TESTS.len());
 
     // Run the tests
     let mut errors = Vec::with_capacity(TESTS.len());
-    for (test, name) in TESTS.into_iter() {
-        let res = panic::catch_unwind(test);
+    for &(test, name) in TESTS.into_iter() {
+        let res = run_test(test);
         let output = match res {
             Ok(_) => "\x1b[32mok\x1b[37m",
-            Err(_) => {
-                errors.push(name);
+            Err(stdout) => {
+                errors.push((name, String::from_utf8(stdout).unwrap()));
                 "\x1b[31mFAILED\x1b[37m"
             }
         };
+
         println!("test {name} ... {output}");
     }
-
-    // Unregister our custom hook
-    let _ = panic::take_hook();
 
     // Print the stdouts of the failed tests
     if !errors.is_empty() {
         println!("\nfailures:");
-        for &&name in &errors {
+        for (name, stdout) in &errors {
             let spacer = "-".repeat(4);
             println!("{spacer} {name} stdout {spacer}");
-            print!("{}", STDOUT.lock().unwrap()[name].clone());
+            println!("{stdout}");
         }
 
         println!("\n\nfailures:");
-        for name in &errors {
-            println!("    {name}")
+        for (name, _) in &errors {
+            println!("    {name}");
         }
     }
 
@@ -124,58 +115,34 @@ fn main() -> ExitCode {
     }
 }
 
-/// Custom panic hook that logs failed assertions instead of printing them
+/// Runs a test
 ///
-/// If a test assertion panics, the hook logs the message in [`STDOUT`] so it can be displayed with the
-/// rest of the stdout for that test case. This does not affect the printing of other panics.
-fn hook(info: &PanicInfo) {
-    let t = info.payload();
-    let location_data = if let Some(d) = info.location() {
-        format!("{}:{}:{}", d.file(), d.line(), d.column())
-    } else {
-        "No location data".into()
-    };
+/// Returns Ok(()) if the test runs without errors. Otherwise, returns the stdout of the test.
+///
+/// The capturing is thread-local, so the stdout of the server itself can't be captured.
+fn run_test(f: fn()) -> Result<(), Vec<u8>> {
+    let stdout = Arc::new(Mutex::new(Vec::new()));
+    set_output_capture(Some(Arc::clone(&stdout)));
 
-    let message = if let Some(p) = t.downcast_ref::<String>() {
-        p
-    } else if let Some(p) = t.downcast_ref::<&str>() {
-        p
-    } else {
-        ""
-    };
+    let res = catch_unwind(f);
 
-    let mut parts = Vec::new();
-    parts.push(message);
-    parts.push(&location_data);
+    // Switch back to stdout
+    set_output_capture(None);
 
-    let pat = Regex::new(r"\$test_name=(.+)\$").unwrap();
-    let captures = pat.captures(message);
-    match captures {
-        // If the regex matches, then this panic was raised by a test assertion.
-        // Append the message onto the existing output for this test.
-        Some(c) => {
-            let test_name = c.get(1).expect("Couldn't find match");
-
-            let mut map = STDOUT.lock().unwrap();
-            let entry = map
-                .entry(test_name.as_str().into())
-                .or_insert(String::new());
-            entry.push_str(&format!("\n{}", parts.join("\n")));
-        }
-        // Else, it was a normal panic, just print it normally
-        None => {
-            eprintln!("{}\n{}", message, location_data);
-        }
-    }
+    res.map_err(|_| stdout.lock().unwrap().clone())
 }
 
 /// Setup tests
 ///
 /// This function does a few setup tasks.
 /// - Loads a tempfile for test quotes.
-/// - Sets our custom panic hook.
 /// - Start the server
 fn setup() -> TempPath {
+    let _ = env_logger::builder()
+        .is_test(true)
+        .target(env_logger::Target::Stdout)
+        .try_init();
+
     // setup tempfile for quotes
     let tf = tempfile::Builder::new()
         .prefix("test-quotes")
@@ -186,7 +153,7 @@ fn setup() -> TempPath {
 
     let path = tf.path();
 
-    println!("Creating temp file at {:?}", path);
+    log::debug!("Created temp quotes file at {:?}", path);
 
     std::fs::write(&path,
         r#"[{"quote": "The quick brown fox jumps over the lazy dog. Can't-I'm<>12932. Cwm fjord bank glyphs vext quiz!", "author": "jz9", "genre": "testing"}]"#
@@ -202,9 +169,6 @@ fn setup() -> TempPath {
 
     // give some time for server to start up
     thread::sleep(std::time::Duration::from_secs(3));
-
-    // set panics to use our custom hook
-    panic::set_hook(Box::new(hook));
 
     // return a temp path so our temp file stays alive
     tf.into_temp_path()
@@ -228,20 +192,18 @@ pub struct Cryptogram;
 
 fn test_api_version() {
     let test_name = "test_api_version";
-    let mut stdout = Stdout::new(test_name.into(), Arc::clone(&STDOUT));
 
     let response_body = post_graphql::<Version, _>(&CLIENT, URL, version::Variables).unwrap();
 
     let data: version::ResponseData = response_body.data.unwrap();
-
-    stdout.push(format!("{:?}", data));
+    println!("{:?}", data);
 
     assert_eq!(data.api_version, "0.1", "$test_name={}$", test_name)
 }
 
 fn test_cryptogram_identity_medium() {
     let test_name = "test_cryptogram_identity_medium";
-    let mut stdout = Stdout::new(test_name.into(), Arc::clone(&STDOUT));
+
     let variables = cryptogram::Variables {
         plaintext: None,
         type_: Some(cryptogram::Type::IDENTITY),
@@ -251,8 +213,7 @@ fn test_cryptogram_identity_medium() {
     let response_body = post_graphql::<Cryptogram, _>(&CLIENT, URL, variables).unwrap();
 
     let data: cryptogram::ResponseData = response_body.data.unwrap();
-
-    stdout.push(format!("{:?}", data));
+    println!("{:?}", data);
 
     assert_eq!(
         data.cryptogram.ciphertext,
@@ -263,7 +224,6 @@ fn test_cryptogram_identity_medium() {
 
 fn test_cryptogram_encrypt_identity() {
     let test_name = "test_cryptogram_encrypt_identity";
-    let mut stdout = Stdout::new(test_name.into(), Arc::clone(&STDOUT));
     let variables = cryptogram::Variables {
         plaintext: Some(TEST_QUOTE.to_string()),
         type_: None,
@@ -273,8 +233,7 @@ fn test_cryptogram_encrypt_identity() {
     let response_body = post_graphql::<Cryptogram, _>(&CLIENT, URL, variables).unwrap();
 
     let data: cryptogram::ResponseData = response_body.data.unwrap();
-
-    stdout.push(format!("{:?}", data));
+    println!("{:?}", data);
 
     assert_eq!(
         data.cryptogram.ciphertext,

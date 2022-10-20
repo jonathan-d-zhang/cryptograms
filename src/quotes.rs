@@ -5,10 +5,15 @@ use rand::prelude::*;
 
 lazy_static! {
     static ref QUOTES: Vec<SerQuote> = {
+        let quotes_file = std::env::var("QUOTES_FILE");
         let file_contents = std::fs::read_to_string(
-            std::env::var("QUOTES_FILE").expect("Environment variable QUOTES_FILE must be set."),
+            quotes_file
+                .as_ref()
+                .expect("Environment variable QUOTES_FILE must be set."),
         )
         .unwrap();
+
+        log::info!("Loading quotes from {:?}", quotes_file);
         serde_json::from_str(&file_contents).unwrap()
     };
 }
@@ -49,7 +54,15 @@ pub fn fetch_quote(length: Length) -> Quote {
         .filter(|quote| len <= quote.quote.len() && quote.quote.len() < len + 30)
         .collect();
 
+    log::debug!(
+        "Number of {:?} length quotes: {:?}",
+        length,
+        right_length.len()
+    );
+
     let quote = right_length.choose(&mut thread_rng()).unwrap();
+
+    log::trace!("Selected {:?}", quote.quote);
 
     Quote::new(quote.quote.clone(), Some(quote.author.clone()))
 }
