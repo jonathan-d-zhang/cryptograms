@@ -8,6 +8,7 @@ use rand::prelude::*;
 
 mod morse;
 mod substitution;
+mod cryptarithm;
 
 /// Lowercase alphabet.
 const ALPHABET: [u8; 26] = *b"abcdefghijklmnopqrstuvwxyz";

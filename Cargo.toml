@@ -21,7 +21,6 @@ serde = "^1.0"
 reqwest = { version = "^0.11", features = ["json", "blocking"] }
 tempfile = "~3.3"
 rand_core = "~0.6"
-regex = "~1.6"
 
 [[test]]
 name = "integration"

@@ -63,11 +63,9 @@ where
 {
     let mut out = Vec::with_capacity(s.len());
     let mut mapping = ALPHABET;
+    mapping.shuffle(rng);
 
     // TODO: Make sure letters don't map to themselves
-
-    let mut shuffled = Vec::with_capacity(mapping.len());
-
 
     for b in s.bytes() {
         if b.is_ascii_alphabetic() {
