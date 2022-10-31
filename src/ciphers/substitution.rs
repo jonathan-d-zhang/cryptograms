@@ -29,7 +29,18 @@ where
 {
     let mut out = Vec::with_capacity(s.len());
 
-    let shift = rng.next_u32() as u8;
+
+    let mut shift = rng.next_u32();
+    while shift == 0 {
+        shift = rng.next_u32();
+    }
+
+    let shift = loop {
+        let x = rng.next_u32();
+        if x != 0 {
+            break x
+        }
+    } as u8;
 
     for b in s.bytes() {
         if b.is_ascii_alphabetic() {
@@ -52,7 +63,11 @@ where
 {
     let mut out = Vec::with_capacity(s.len());
     let mut mapping = ALPHABET;
-    mapping.shuffle(rng);
+
+    // TODO: Make sure letters don't map to themselves
+
+    let mut shuffled = Vec::with_capacity(mapping.len());
+
 
     for b in s.bytes() {
         if b.is_ascii_alphabetic() {
