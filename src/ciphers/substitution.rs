@@ -62,10 +62,18 @@ where
     R: Rng + ?Sized,
 {
     let mut out = Vec::with_capacity(s.len());
-    let mut mapping = ALPHABET;
-    mapping.shuffle(rng);
 
-    // TODO: Make sure letters don't map to themselves
+    let mut mapping = Vec::with_capacity(ALPHABET.len());
+    let mut alphabet = ALPHABET.to_vec();
+    while !alphabet.is_empty() {
+        let i = rng.gen_range(0..alphabet.len());
+        // if letter maps to itself, try again
+        if alphabet[i] - b'a' == mapping.len() as u8 {
+            continue
+        }
+        mapping.push(alphabet[i]);
+        alphabet.swap_remove(i);
+    }
 
     for b in s.bytes() {
         if b.is_ascii_alphabetic() {
