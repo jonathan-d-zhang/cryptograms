@@ -12,3 +12,6 @@ target/
 # Code coverage data files
 *.profraw
 *.profdata
+
+# Profiling data
+callgrind.**

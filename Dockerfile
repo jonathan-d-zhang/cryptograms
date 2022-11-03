@@ -1,4 +1,4 @@
-FROM rust:1.62 as base
+FROM rust:1.66 as base
 
 RUN USER=root cargo new --bin cryptograms
 WORKDIR /cryptograms
