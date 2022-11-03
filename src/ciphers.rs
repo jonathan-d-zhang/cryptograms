@@ -2,13 +2,13 @@
 
 #![warn(missing_docs)]
 
-use super::cryptogram::Type;
+pub use super::cryptogram::Type;
 use super::cryptogram::Type::*;
 use rand::prelude::*;
 
+mod cryptarithm;
 mod morse;
 mod substitution;
-mod cryptarithm;
 
 /// Lowercase alphabet.
 const ALPHABET: [u8; 26] = *b"abcdefghijklmnopqrstuvwxyz";
@@ -40,6 +40,7 @@ pub fn encrypt(plaintext: &str, cipher_type: Type, key: Option<String>) -> Strin
         Caesar => substitution::caeser(plaintext, &mut rng),
         Aristocrat => substitution::aristocrat(plaintext, &mut rng),
         Morbit => morse::morbit(plaintext, key),
+        Cryptarithm => cryptarithm::cryptarithm(&mut rng),
     }
 }
 

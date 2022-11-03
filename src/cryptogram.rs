@@ -18,6 +18,7 @@ pub enum Type {
     /// Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details.
     Aristocrat,
     Morbit,
+    Cryptarithm,
 }
 
 /// The length of a cipher.

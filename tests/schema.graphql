@@ -39,6 +39,7 @@ enum Type {
   "Shift letters by a random amount. See [`crate::ciphers::caeser`] for more details." CAESAR
   "Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details." ARISTOCRAT
   MORBIT
+  CRYPTARITHM
 }
 
 """

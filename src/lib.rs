@@ -10,10 +10,10 @@ use juniper_iron::{GraphQLHandler, GraphiQLHandler};
 use logger::Logger;
 use mount::Mount;
 
-mod ciphers;
-mod cryptogram;
+pub mod ciphers;
+pub mod cryptogram;
 mod quotes;
-use cryptogram::{Cryptogram, Length, Type};
+pub use cryptogram::{Cryptogram, Length, Type};
 
 struct Query;
 

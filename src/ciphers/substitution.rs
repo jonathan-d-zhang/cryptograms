@@ -29,7 +29,6 @@ where
 {
     let mut out = Vec::with_capacity(s.len());
 
-
     let mut shift = rng.next_u32();
     while shift == 0 {
         shift = rng.next_u32();
@@ -38,7 +37,7 @@ where
     let shift = loop {
         let x = rng.next_u32();
         if x != 0 {
-            break x
+            break x;
         }
     } as u8;
 
@@ -69,7 +68,7 @@ where
         let i = rng.gen_range(0..alphabet.len());
         // if letter maps to itself, try again
         if alphabet[i] - b'a' == mapping.len() as u8 {
-            continue
+            continue;
         }
         mapping.push(alphabet[i]);
         alphabet.swap_remove(i);
