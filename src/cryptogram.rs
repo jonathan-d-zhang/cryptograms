@@ -20,6 +20,8 @@ pub enum Type {
     Caesar,
     /// Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details.
     Aristocrat,
+    /// Monoalphabetic substitution. See ['crate::ciphers::patristocrat`] for more details.
+    Patristocrat,
     Morbit,
 
 // Too unoptimized for now

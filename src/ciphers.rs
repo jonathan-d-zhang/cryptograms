@@ -33,12 +33,13 @@ fn identity(s: &str) -> String {
 
 /// Wrapper function to call a specific cipher by [`Type`].
 pub fn encrypt(plaintext: &str, cipher_type: Type, key: Option<String>) -> String {
-    let mut rng = thread_rng();
+    let rng = &mut thread_rng();
     match cipher_type {
         Identity => identity(plaintext),
         Rot13 => substitution::rot13(plaintext),
-        Caesar => substitution::caeser(plaintext, &mut rng),
-        Aristocrat => substitution::aristocrat(plaintext, &mut rng),
+        Caesar => substitution::caeser(plaintext, rng),
+        Aristocrat => substitution::aristocrat(plaintext, rng),
+        Patristocrat => substitution::patristocrat(plaintext, rng),
         Morbit => morse::morbit(plaintext, key),
         //Cryptarithm => cryptarithm::cryptarithm(&mut rng),
     }
@@ -47,9 +48,6 @@ pub fn encrypt(plaintext: &str, cipher_type: Type, key: Option<String>) -> Strin
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    mod mock_rng;
-    pub use mock_rng::MockRng;
 
     #[test]
     fn test_match_case_same_case() {
