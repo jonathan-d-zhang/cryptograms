@@ -29,11 +29,6 @@ where
 {
     let mut out = Vec::with_capacity(s.len());
 
-    let mut shift = rng.next_u32();
-    while shift == 0 {
-        shift = rng.next_u32();
-    }
-
     let shift = loop {
         let x = rng.next_u32();
         if x != 0 {
@@ -62,22 +57,18 @@ where
 {
     let mut out = Vec::with_capacity(s.len());
 
-    let mut mapping = Vec::with_capacity(ALPHABET.len());
-    let mut alphabet = ALPHABET.to_vec();
-    while !alphabet.is_empty() {
-        let i = rng.gen_range(0..alphabet.len());
-        // if letter maps to itself, try again
-        if alphabet[i] - b'a' == mapping.len() as u8 {
-            continue;
+    let mut mapping: Vec<_> = ALPHABET.choose_multiple(rng, 26).collect();
+    loop {
+        if (mapping.iter().zip(ALPHABET.iter())).all(|p| *p.0 != p.1) {
+            break;
         }
-        mapping.push(alphabet[i]);
-        alphabet.swap_remove(i);
+        mapping.shuffle(rng);
     }
 
     for b in s.bytes() {
         if b.is_ascii_alphabetic() {
             out.push(match_case(
-                mapping[(b.to_ascii_uppercase() - b'A') as usize],
+                *mapping[(b.to_ascii_uppercase() - b'A') as usize],
                 b,
             ));
         } else {
@@ -108,9 +99,9 @@ mod tests {
 
     #[test]
     fn test_caesar() {
-        // The mock shift is 0, so it's the same as an identity function.
         let res = caeser(TEST_TEXT, &mut MockRng::new());
-        assert_eq!(res, TEST_TEXT)
+        let ans = "bcdefghijklmnopqrstuvwxyza 0123456789-!'\".BCDEFGHIJKLMNOPQRSTUVWXYZA";
+        assert_eq!(res, ans);
     }
 
     #[test]
