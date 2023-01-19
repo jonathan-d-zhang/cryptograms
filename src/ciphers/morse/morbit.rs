@@ -72,11 +72,11 @@ pub fn morbit(s: &str, key: Option<String>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ciphers::tests::MockRng;
+    use rand::rngs::mock::StepRng;
 
     #[test]
     fn test_generate_key() {
-        let k = generate_key(&mut MockRng::new());
+        let k = generate_key(&mut StepRng::new(0, 1));
 
         assert_eq!(k, "abcdefghi")
     }

@@ -82,7 +82,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ciphers::tests::MockRng;
+    use rand::rngs::mock::StepRng;
 
     static TEST_TEXT: &str =
         "abcdefghijklmnopqrstuvwxyz 0123456789-!'\".ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -99,14 +99,14 @@ mod tests {
 
     #[test]
     fn test_caesar() {
-        let res = caeser(TEST_TEXT, &mut MockRng::new());
+        let res = caeser(TEST_TEXT, &mut StepRng::new(0, 1));
         let ans = "bcdefghijklmnopqrstuvwxyza 0123456789-!'\".BCDEFGHIJKLMNOPQRSTUVWXYZA";
         assert_eq!(res, ans);
     }
 
     #[test]
     fn test_aristocrat() {
-        let res = aristocrat(TEST_TEXT, &mut MockRng::new());
+        let res = aristocrat(TEST_TEXT, &mut StepRng::new(0, 1));
         let ans = "bcdefghijklmnopqrstuvwxyza 0123456789-!'\".BCDEFGHIJKLMNOPQRSTUVWXYZA";
         assert_eq!(res, ans);
     }
