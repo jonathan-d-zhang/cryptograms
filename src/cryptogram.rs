@@ -3,6 +3,9 @@
 use super::ciphers::encrypt;
 use super::quotes;
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
 /// Describe the type of cipher used to encrypt a [`Cryptogram`]
 ///
 /// Each of the variants should have an accompanying function with a lowercased name.
@@ -18,7 +21,9 @@ pub enum Type {
     /// Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details.
     Aristocrat,
     Morbit,
-    Cryptarithm,
+
+// Too unoptimized for now
+//    Cryptarithm,
 }
 
 /// The length of a cipher.
@@ -44,8 +49,13 @@ pub struct Cryptogram {
     pub length: Length,
     /// The author of the quote.
     pub author: Option<String>,
+
     /// Token to request the plaintext.
-    pub token: String,
+    pub token: i32,
+
+    /// The plaintext
+    #[graphql(skip)]
+    pub plaintext: String,
 }
 
 impl Cryptogram {
@@ -73,11 +83,18 @@ impl Cryptogram {
         let ciphertext = encrypt(&quote.text, r#type, key);
 
         Self {
-            ciphertext,
+            ciphertext: ciphertext.clone(),
             r#type,
             length,
             author: quote.author,
-            token: "e".into(),
+            token: compute_hash(ciphertext),
+            plaintext: quote.text,
         }
     }
+}
+
+fn compute_hash(s: String) -> i32 {
+    let mut hasher = DefaultHasher::new();
+    s.hash(&mut hasher);
+    hasher.finish() as i32
 }

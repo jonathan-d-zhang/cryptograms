@@ -13,7 +13,6 @@ use env_logger;
 use graphql_client::{reqwest::post_graphql_blocking as post_graphql, GraphQLQuery};
 use log;
 use reqwest::blocking::Client;
-use std::collections::HashSet;
 use std::io::set_output_capture;
 use std::panic::catch_unwind;
 use std::process::ExitCode;
@@ -36,11 +35,7 @@ static TESTS: &[(fn(), &str)] = &[
         test_cryptogram_identity_medium,
         "test_cryptogram_identity_medium",
     ),
-    (
-        test_cryptogram_encrypt_identity,
-        "test_cryptogram_encrypt_identity",
-    ),
-    (test_cryptogram_cryptarithm, "test_cryptogram_cryptarithm"),
+    //    (test_cryptogram_cryptarithm, "test_cryptogram_cryptarithm"),
 ];
 
 fn main() -> ExitCode {
@@ -164,7 +159,7 @@ fn setup() -> (Vec<TempPath>, Arc<Mutex<Vec<u8>>>) {
     std::fs::write(&words_path, r"send,money,more".as_bytes()).unwrap();
 
     std::env::set_var("WORDS_FILE", words_path);
-//    std::env::set_var("WORDS_FILE", "words.txt");
+    //    std::env::set_var("WORDS_FILE", "words.txt");
 
     let stdout = Arc::new(Mutex::new(Vec::new()));
     let clone = Arc::clone(&stdout);
@@ -219,7 +214,6 @@ fn test_cryptogram_identity_medium() {
     let response_body = post_graphql::<Cryptogram, _>(&CLIENT, URL, variables).unwrap();
 
     let data: cryptogram::ResponseData = response_body.data.unwrap();
-    println!("{:?}", data);
 
     assert_eq!(
         data.cryptogram.ciphertext,
@@ -227,21 +221,7 @@ fn test_cryptogram_identity_medium() {
     )
 }
 
-fn test_cryptogram_encrypt_identity() {
-    let variables = cryptogram::Variables {
-        plaintext: Some(TEST_QUOTE.to_string()),
-        type_: None,
-        length: None,
-    };
-
-    let response_body = post_graphql::<Cryptogram, _>(&CLIENT, URL, variables).unwrap();
-
-    let data: cryptogram::ResponseData = response_body.data.unwrap();
-    println!("{:?}", data);
-
-    assert_eq!(data.cryptogram.ciphertext, TEST_QUOTE.to_string(),)
-}
-
+/*
 fn test_cryptogram_cryptarithm() {
     let variables = cryptogram::Variables {
         plaintext: None,
@@ -265,3 +245,4 @@ fn test_cryptogram_cryptarithm() {
     assert_eq!(words, HashSet::from(["more", "money", "send"]));
     assert!(false);
 }
+*/

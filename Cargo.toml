@@ -16,6 +16,9 @@ lazy_static = "1.4"
 rand = "~0.8"
 itertools = "~0.10"
 regex = "1"
+rayon = "1.5"
+postgres = "0.19"
+persistent = "0.4"
 
 [dev-dependencies]
 graphql_client = { version = "~0.11", features = ["reqwest-blocking"] }

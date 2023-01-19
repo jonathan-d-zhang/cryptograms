@@ -18,6 +18,7 @@ FROM debian:bullseye-slim as dev
 
 COPY --from=base /cryptograms/target/debug/cryptograms ./cryptograms
 COPY quotes.json quotes.json
+COPY words.txt words.txt
 
 CMD ["./cryptograms"]
 
