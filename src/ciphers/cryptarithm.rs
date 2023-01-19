@@ -1,8 +1,15 @@
+#![allow(dead_code)]
+
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use rand::prelude::*;
-use std::collections::{HashMap, HashSet};
+use rayon::prelude::*;
 use regex::Regex;
+use std::collections::{HashMap, HashSet};
+use std::sync::{
+    atomic::{AtomicU64, Ordering::Relaxed},
+    Mutex,
+};
 
 lazy_static! {
     static ref WORDS: Vec<String> = {
@@ -12,15 +19,20 @@ lazy_static! {
         log::info!("Loading cryptarithm words from {:?}", words_file);
         let line = std::fs::read_to_string(words_file).unwrap();
 
-        line.trim().split(',').filter_map(|s| {
-            if 3 < s.len() && s.len() < 8 {
-                Some(s.to_string())
-            } else {
-                None
-            }
-        }).collect()
+        line.trim()
+            .split(',')
+            .filter_map(|s| {
+                if 3 < s.len() && s.len() < 8 {
+                    Some(s.to_string())
+                } else {
+                    None
+                }
+            })
+            .collect()
     };
 }
+
+static mut STATS: [AtomicU64; 3] = [AtomicU64::new(0), AtomicU64::new(0), AtomicU64::new(0)];
 
 fn word_to_int(word: &str, mapping: &HashMap<char, i32>) -> i32 {
     let mut r = 0;
@@ -33,17 +45,18 @@ fn word_to_int(word: &str, mapping: &HashMap<char, i32>) -> i32 {
 
 #[derive(Debug)]
 struct Pattern {
-    num: i32,
     length: usize,
     pattern: Regex,
     used_letters: HashSet<char>,
     indexes: HashMap<char, Vec<usize>>,
-    failed_checks: [u64; 3],
 }
 
 impl Pattern {
     pub fn new(num: i32, mapping: &HashMap<char, i32>) -> Self {
-        let reverse_mapping: HashMap<char, char> = mapping.iter().map(|(&k, &v)| ((v + 48) as u8 as char, k)).collect();
+        let reverse_mapping: HashMap<char, char> = mapping
+            .iter()
+            .map(|(&k, &v)| ((v + 48) as u8 as char, k))
+            .collect();
         log::trace!("Generated reverse_mapping={:?}", reverse_mapping);
 
         let mut pat = String::new();
@@ -55,18 +68,16 @@ impl Pattern {
             if let Some(&n) = reverse_mapping.get(&chr) {
                 pat.push(n);
             } else {
-                indexes.entry(chr).or_insert_with(|| vec![]).push(i);
+                indexes.entry(chr).or_insert_with(Vec::new).push(i);
                 pat.push_str(&allowed_wild_chars);
             }
         }
         log::trace!("Created pattern {pat:?} from {num}");
         Self {
-            num,
             length: (num as f64).log10().ceil() as usize,
             pattern: Regex::new(&format!("^{pat}$")).unwrap(),
-            used_letters: mapping.keys().map(|&chr| chr).collect(),
+            used_letters: mapping.keys().copied().collect(),
             indexes,
-            failed_checks: [0; 3],
         }
     }
 
@@ -75,14 +86,18 @@ impl Pattern {
         String::new()
     }
 
-    fn matches_pattern(&mut self, word: &str) -> bool {
+    fn matches_pattern(&self, word: &str) -> bool {
         if word.len() != self.length {
-            self.failed_checks[0] += 1;
+            unsafe {
+                STATS[0].fetch_add(1, Relaxed);
+            }
             return false;
         }
 
         if !self.pattern.is_match(word) {
-            self.failed_checks[1] += 1;
+            unsafe {
+                STATS[1].fetch_add(1, Relaxed);
+            }
             return false;
         }
 
@@ -94,18 +109,22 @@ impl Pattern {
             let mut seen = self.used_letters.clone();
             for v in self.indexes.values() {
                 if v.len() > 1 {
-                    let mut letters: HashSet<_> = v.iter().map(|&i| bytes[i]).collect();
+                    let letters: HashSet<_> = v.iter().map(|&i| bytes[i]).collect();
 
                     if letters.len() != 1 {
-                        self.failed_checks[2] += 1;
-                        return false
+                        unsafe {
+                            STATS[2].fetch_add(1, Relaxed);
+                        }
+                        return false;
                     }
                 }
 
                 // fail if we've already seen this char
                 if !seen.insert(bytes[v[0]] as char) {
-                    self.failed_checks[2] += 1;
-                    return false
+                    unsafe {
+                        STATS[2].fetch_add(1, Relaxed);
+                    }
+                    return false;
                 }
             }
         }
@@ -115,10 +134,10 @@ impl Pattern {
 }
 
 /// Returns the word that would form a valid cryptarithm if possible
-fn create_cryptarithm<'a>(a: &str, b: &str, words: &Vec<&String>) -> Option<String> {
+fn create_cryptarithm(a: &str, b: &str, words: &[&String]) -> Option<String> {
+    log::debug!("Checking a={a} b={b}");
     // map each letter to a number
-    let mut unique_letters: HashSet<char> = a.chars().chain(b.chars()).collect();
-
+    let unique_letters: HashSet<char> = a.chars().chain(b.chars()).collect();
     let unique_letter_count = unique_letters.len();
 
     // too many letters for a unique mapping
@@ -126,8 +145,31 @@ fn create_cryptarithm<'a>(a: &str, b: &str, words: &Vec<&String>) -> Option<Stri
         return None;
     }
 
-    let mut solutions = Vec::new();
-    for p in (0..=9).permutations(unique_letter_count) {
+    let n = a.len();
+    let m = b.len();
+
+    let length_range = n.max(m)..=n.max(m) + 1;
+    // filter out a, b, and words that are mathematically impossible
+    let filtered: Vec<_> = words
+        .iter()
+        .filter(|&&w| length_range.contains(&w.len()) && w != a && w != b)
+        .collect();
+
+    if filtered.is_empty() {
+        log::debug!("Filtered all words, returning");
+        return None;
+    }
+
+    log::debug!("Searching in {:?}", filtered);
+
+    let solutions = Mutex::new(Vec::new());
+    for (i, p) in (0..=9).permutations(unique_letter_count).enumerate() {
+        if i % 100000 == 0 {
+            unsafe {
+                log::debug!("Tries: {:?}", STATS);
+            }
+        }
+
         // map unique letters to digits
         let mapping: HashMap<char, i32> = unique_letters
             .iter()
@@ -141,46 +183,46 @@ fn create_cryptarithm<'a>(a: &str, b: &str, words: &Vec<&String>) -> Option<Stri
 
         // if there are leading zeros, skip
         if mapping[&a.chars().next().unwrap()] == 0 || mapping[&b.chars().next().unwrap()] == 0 {
-            log::trace!("Skip due to leading zero");
-            continue
+            log::trace!("Skip: leading zero");
+            continue;
         }
 
         log::trace!("Mapped {a:?} to {num_a} and {b:?} to {num_b}");
 
         // check what words match the pattern of numbers in the sum
         let s = num_a + num_b;
-        let mut pat = Pattern::new(s, &mapping);
+        let pat = Pattern::new(s, &mapping);
 
-        // TODO: parallelize
-        let n = a.len();
-        let m = b.len();
+        /*        for word in words.iter().filter(|&&word| word != a && word != b) {
+                    if length_range.start > word.len() || word.len() > length_range.end {
+                        continue
+                    }
 
-        let length_range = n.max(m)..n.max(m)+1;
+                    if pat.matches_pattern(word) {
+                        let reverse_mapping: HashMap<char, char> = mapping.iter().map(|(&k, &v)| ((v + 48) as u8 as char, k)).collect();
+        //                log::debug!("Mapping={mapping:?}");
+        //                log::debug!("Reverse mapping={reverse_mapping:?}");
+        //                log::debug!("Pattern={pat:?}");
+        //                println!("Solution found: {word}");
 
-        for word in words.iter().filter(|&&word| word != a && word != b) {
-            if length_range.start > word.len() || word.len() > length_range.end {
-                continue
-            }
-
-            if pat.matches_pattern(word) {
-                let reverse_mapping: HashMap<char, char> = mapping.iter().map(|(&k, &v)| ((v + 48) as u8 as char, k)).collect();
-//                log::debug!("Mapping={mapping:?}");
-//                log::debug!("Reverse mapping={reverse_mapping:?}");
-//                log::debug!("Pattern={pat:?}");
-//                println!("Solution found: {word}");
-
-               if !solutions.is_empty() {
-                    return None
+                       if !solutions.is_empty() {
+                            return None
+                        }
+                        solutions.push((num_a, num_b, s, word));
+                    }
                 }
-                solutions.push((num_a, num_b, s, word));
-            }
-        }
+        */
+        filtered
+            .par_iter()
+            .filter(|&&&word| pat.matches_pattern(word))
+            .for_each(|w| solutions.lock().unwrap().push(w));
     }
 
-    if solutions.len() == 1 {
-        let (num_a, num_b, s, word) = solutions[0];
-        log::debug!("Solution found: {num_a} + {num_b} = {s}");
-        return Some(word.to_string())
+    let sol = solutions.into_inner().unwrap();
+    if sol.len() == 1 {
+        //        let (num_a, num_b, s, word) = solutions[0];
+        //        log::debug!("Solution found: {num_a} + {num_b} = {s}");
+        return Some(sol[0].to_string());
     }
 
     None
@@ -189,7 +231,7 @@ fn create_cryptarithm<'a>(a: &str, b: &str, words: &Vec<&String>) -> Option<Stri
 pub fn cryptarithm<R: Rng + ?Sized>(rng: &mut R) -> String {
     loop {
         let words: Vec<&String> = WORDS.choose_multiple(rng, 10).collect();
-        println!("{:?}", words);
+        log::debug!("Words in this batch: {:?}", words);
 
         // TODO: parallelize
         for i in 0..words.len() {
@@ -199,14 +241,20 @@ pub fn cryptarithm<R: Rng + ?Sized>(rng: &mut R) -> String {
 
                 log::trace!("Selected {a} and {b}");
 
-                if let Some(c) = create_cryptarithm(&a, &b, &words) {
+                if let Some(c) = create_cryptarithm(a, b, &words) {
                     let cryptarithm = format!("{a} + {b} = {c}");
                     log::info!("Found cryptarithm: {cryptarithm}");
-                    return cryptarithm
+                    unsafe {
+                        log::debug!("Tries: {:?}", STATS);
+                    }
+                    return cryptarithm;
                 }
             }
         }
-        println!("Switching batch");
+        unsafe {
+            log::debug!("Tries: {:?}", STATS);
+        }
+        log::debug!("Switching batch");
     }
 }
 
@@ -214,6 +262,23 @@ pub fn cryptarithm<R: Rng + ?Sized>(rng: &mut R) -> String {
 mod tests {
     use super::*;
 
+    /*
+        #[test]
+        fn test_create_cryptarithm() {
+            let a = "send";
+            let b = "more";
+
+            let x = String::from("send");
+            let y = String::from("more");
+            let z = String::from("money");
+            let words: Vec<&String> = vec![&x, &y, &z];
+
+            assert_eq!(
+                create_cryptarithm(a, b, &words),
+                Some(String::from("money"))
+            );
+        }
+    */
     #[test]
     fn test_word_to_int() {
         let mapping = HashMap::from([('b', 3), ('c', 5)]);
@@ -223,16 +288,11 @@ mod tests {
     }
 
     #[test]
-    fn test_pattern() {
-
-    }
+    fn test_pattern() {}
 
     #[test]
     fn test_matches_pattern() {
-        let pattern = Pattern::new(
-            112233,
-            &HashMap::from([('a', 1), ('b', 2), ('c', 3)]),
-        );
+        let pattern = Pattern::new(112233, &HashMap::from([('a', 1), ('b', 2), ('c', 3)]));
 
         let word = "aabbcc";
 

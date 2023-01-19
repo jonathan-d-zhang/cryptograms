@@ -40,7 +40,7 @@ pub fn encrypt(plaintext: &str, cipher_type: Type, key: Option<String>) -> Strin
         Caesar => substitution::caeser(plaintext, &mut rng),
         Aristocrat => substitution::aristocrat(plaintext, &mut rng),
         Morbit => morse::morbit(plaintext, key),
-        Cryptarithm => cryptarithm::cryptarithm(&mut rng),
+        //Cryptarithm => cryptarithm::cryptarithm(&mut rng),
     }
 }
 
