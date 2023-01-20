@@ -20,12 +20,12 @@ pub enum Type {
     Caesar,
     /// Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details.
     Aristocrat,
-    /// Monoalphabetic substitution, spaces removed. See ['crate::ciphers::patristocrat`] for more details.
+    /// Monoalphabetic substitution, spaces ignored. See [`crate::ciphers::patristocrat`] for more details.
     Patristocrat,
 
-    /// Monoalphabetic substitution, spaces removed, keyed plaintext alphabet. See
+    /// Monoalphabetic substitution, spaces ignored, keyed plaintext alphabet. See
     /// [`crate::ciphers::patristocrat_k1`] for more details.
-    K1Patristocrat,
+    PatristocratK1,
 
     Morbit,
     // Too unoptimized for now
@@ -67,7 +67,8 @@ pub struct Cryptogram {
     #[graphql(skip)]
     pub plaintext: String,
 
-    // TODO: character frequencies
+    /// Character frequencies, if applicable
+    pub frequencies: Option<Vec<i32>>,
 }
 
 impl Cryptogram {
@@ -94,20 +95,56 @@ impl Cryptogram {
 
         let ciphertext = encrypt(&quote.text, r#type, key.clone()).to_uppercase();
 
+        let frequencies = match r#type {
+            Identity | Caesar | Aristocrat | Patristocrat | PatristocratK1 => {
+                Some(frequencies(&ciphertext))
+            }
+            _ => None,
+        };
+
         Self {
             ciphertext: ciphertext.clone(),
             r#type,
             length,
             author: quote.author,
-            token: compute_hash(ciphertext),
+            token: compute_hash(&ciphertext),
             key,
             plaintext: quote.text,
+            frequencies,
         }
     }
 }
 
-fn compute_hash(s: String) -> i32 {
+fn frequencies(s: &str) -> Vec<i32> {
+    let mut freqs = vec![0; 26];
+    for b in s.to_uppercase().bytes() {
+        if b.is_ascii_alphabetic() {
+            freqs[(b - b'A') as usize] += 1;
+        }
+    }
+
+    freqs
+}
+
+fn compute_hash(s: &str) -> i32 {
     let mut hasher = DefaultHasher::new();
     s.hash(&mut hasher);
     hasher.finish() as i32
+}
+
+#[cfg(test)]
+mod tests {
+    use super::frequencies;
+
+    #[test]
+    fn test_frequencies() {
+        let input = "aaaaabbccac";
+        let output = frequencies(input);
+        let mut ans = vec![0; 26];
+        ans[0] = input.chars().filter(|c| *c == 'a').count() as i32;
+        ans[1] = input.chars().filter(|c| *c == 'b').count() as i32;
+        ans[2] = input.chars().filter(|c| *c == 'c').count() as i32;
+
+        assert_eq!(output, ans);
+    }
 }

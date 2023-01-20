@@ -4,8 +4,8 @@
 
 pub use super::cryptogram::Type;
 use super::cryptogram::Type::*;
-use rand::prelude::*;
 use lazy_static::lazy_static;
+use rand::prelude::*;
 
 mod cryptarithm;
 mod morse;
@@ -41,7 +41,6 @@ lazy_static! {
 
 /// Lowercase alphabet.
 const ALPHABET: [u8; 26] = *b"abcdefghijklmnopqrstuvwxyz";
-
 
 /// Adjust the case of ord to match the case of to_match
 const fn match_case(ord: u8, to_match: u8) -> u8 {

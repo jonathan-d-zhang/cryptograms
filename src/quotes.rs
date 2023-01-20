@@ -44,6 +44,7 @@ impl Quote {
 }
 
 pub fn fetch_quote(length: Length) -> Quote {
+    // TODO: don't select duplicate quotes
     let len = match length {
         Length::Short => 60,
         Length::Medium => 90,

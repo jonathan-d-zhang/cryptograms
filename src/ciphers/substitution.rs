@@ -3,8 +3,8 @@
 //! [`rot13`], [`caeser`], [`aristocrat`], [`patristocrat`]
 
 use super::{match_case, shift_letter, ALPHABET, WORDS};
-use rand::prelude::*;
 use itertools::Itertools;
+use rand::prelude::*;
 
 const ROT13_MAPPING: [u8; 26] = *b"nopqrstuvwxyzabcdefghijklm";
 
@@ -86,7 +86,6 @@ where
     substitute(s, &mapping, true)
 }
 
-
 /// Similar to aristocrat, but removes all spaces.
 pub fn patristocrat<R>(s: &str, rng: &mut R) -> String
 where
@@ -104,7 +103,8 @@ where
 }
 
 pub fn patristocrat_k1<R>(s: &str, key: Option<String>, rng: &mut R) -> String
-where R: Rng + ?Sized,
+where
+    R: Rng + ?Sized,
 {
     let mut key_chars = [false; 255];
 
@@ -113,12 +113,15 @@ where R: Rng + ?Sized,
 
     // mapping starts with the key, which is either randomly chosen or given
     // unwrap is safe because WORDS is guaranteed non-empty
-    let key = key.as_ref().unwrap_or_else(|| WORDS.choose(rng).unwrap()).to_lowercase();
+    let key = key
+        .as_ref()
+        .unwrap_or_else(|| WORDS.choose(rng).unwrap())
+        .to_lowercase();
 
     for b in key.bytes() {
         // letters can only be used once
         if key_chars[b as usize] {
-            continue
+            continue;
         }
         mapping[i] = b;
         key_chars[b as usize] = true;
@@ -141,7 +144,6 @@ where R: Rng + ?Sized,
         }
         mapping.rotate_right(1);
     }
-
 
     substitute(s, &mapping, false)
 }
@@ -180,7 +182,8 @@ mod tests {
     #[test]
     fn test_patristocrat() {
         let res = patristocrat(TEST_TEXT, &mut StepRng::new(0, 1));
-        let ans = "bcdef ghijk lmnop qrstu vwxyz a0123 45678 9-!'\" .BCDE FGHIJ KLMNO PQRST UVWXY ZA";
+        let ans =
+            "bcdef ghijk lmnop qrstu vwxyz a0123 45678 9-!'\" .BCDE FGHIJ KLMNO PQRST UVWXY ZA";
         assert_eq!(res, ans);
     }
 
@@ -188,7 +191,11 @@ mod tests {
     fn test_patristocrat_k1() {
         // teskyabcdfghijlmnopqruvwxz
         // ABCDEFGHIJKLMNOPQRSTUVWXYZ
-        let res = patristocrat_k1("bcdefghijklmnopqrstuvwxyza", Some(String::from("testkey")), &mut StepRng::new(0, 1 ));
+        let res = patristocrat_k1(
+            "bcdefghijklmnopqrstuvwxyza",
+            Some(String::from("testkey")),
+            &mut StepRng::new(0, 1),
+        );
         let ans = "tesky abcdf ghijl mnopq ruvwx z";
 
         assert_eq!(res, ans);
