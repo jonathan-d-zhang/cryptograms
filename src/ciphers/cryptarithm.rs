@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use itertools::Itertools;
-use lazy_static::lazy_static;
 use rand::prelude::*;
 use rayon::prelude::*;
 use regex::Regex;
@@ -11,26 +10,7 @@ use std::sync::{
     Mutex,
 };
 
-lazy_static! {
-    static ref WORDS: Vec<String> = {
-        let words_file =
-            std::env::var("WORDS_FILE").expect("Environment variable WORDS_FILE must be set.");
-
-        log::info!("Loading cryptarithm words from {:?}", words_file);
-        let line = std::fs::read_to_string(words_file).unwrap();
-
-        line.trim()
-            .split(',')
-            .filter_map(|s| {
-                if 3 < s.len() && s.len() < 8 {
-                    Some(s.to_string())
-                } else {
-                    None
-                }
-            })
-            .collect()
-    };
-}
+use super::WORDS;
 
 static mut STATS: [AtomicU64; 3] = [AtomicU64::new(0), AtomicU64::new(0), AtomicU64::new(0)];
 

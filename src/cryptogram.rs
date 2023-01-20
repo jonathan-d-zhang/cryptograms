@@ -20,8 +20,13 @@ pub enum Type {
     Caesar,
     /// Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details.
     Aristocrat,
-    /// Monoalphabetic substitution. See ['crate::ciphers::patristocrat`] for more details.
+    /// Monoalphabetic substitution, spaces removed. See ['crate::ciphers::patristocrat`] for more details.
     Patristocrat,
+
+    /// Monoalphabetic substitution, spaces removed, keyed plaintext alphabet. See
+    /// [`crate::ciphers::patristocrat_k1`] for more details.
+    K1Patristocrat,
+
     Morbit,
     // Too unoptimized for now
     //    Cryptarithm,
@@ -54,9 +59,15 @@ pub struct Cryptogram {
     /// Token to request the plaintext.
     pub token: i32,
 
+    /// The key used to encrypt, if applicable.
+    #[graphql(skip)]
+    pub key: Option<String>,
+
     /// The plaintext
     #[graphql(skip)]
     pub plaintext: String,
+
+    // TODO: character frequencies
 }
 
 impl Cryptogram {
@@ -81,7 +92,7 @@ impl Cryptogram {
             None => quotes::fetch_quote(length),
         };
 
-        let ciphertext = encrypt(&quote.text, r#type, key);
+        let ciphertext = encrypt(&quote.text, r#type, key.clone()).to_uppercase();
 
         Self {
             ciphertext: ciphertext.clone(),
@@ -89,6 +100,7 @@ impl Cryptogram {
             length,
             author: quote.author,
             token: compute_hash(ciphertext),
+            key,
             plaintext: quote.text,
         }
     }

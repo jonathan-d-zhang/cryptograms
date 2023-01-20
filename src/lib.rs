@@ -52,6 +52,8 @@ impl Query {
         "0.1"
     }
 
+    // TODO: Return the key used also
+
     /// Request plaintext for a specific cryptogram by token.
     fn plaintext(context: &T, token: i32) -> FieldResult<String> {
         let row = context.write().unwrap().db.query_one(
@@ -82,6 +84,7 @@ impl Mutation {
     ) -> Cryptogram {
         let cryptogram = Cryptogram::new(plaintext, length, r#type, key);
 
+        // TODO: insert key
         context
             .write()
             .unwrap()
@@ -130,13 +133,6 @@ pub fn make_server() {
         )",
         )
         .unwrap();
-
-    let rows = client.query("SELECT * FROM cryptograms", &[]).unwrap();
-    for row in &rows {
-        let token: i32 = row.get(0);
-        let plaintext: String = row.get(1);
-        println!("token={token:?}, plaintext={plaintext:?}");
-    }
 
     let state = State::<Context>::one(Context::new(client));
     chain.link_before(state);

@@ -5,13 +5,43 @@
 pub use super::cryptogram::Type;
 use super::cryptogram::Type::*;
 use rand::prelude::*;
+use lazy_static::lazy_static;
 
 mod cryptarithm;
 mod morse;
 mod substitution;
 
+lazy_static! {
+    /// Stores words suitable for use as keys in patristocrats or operands in cryptarithms
+    static ref WORDS: Vec<String> = {
+        let words_file =
+            std::env::var("WORDS_FILE").expect("Environment variable WORDS_FILE must be set.");
+
+        log::info!("Loading words from {:?}", words_file);
+        let contents = std::fs::read_to_string(words_file).unwrap();
+
+        let words: Vec<_> = contents.trim()
+            .split(',')
+            .filter_map(|s| {
+                if 3 < s.len() && s.len() < 8 {
+                    Some(s.to_string())
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if words.is_empty() {
+            panic!("WORDS_FILE must be non-empty");
+        }
+
+        words
+    };
+}
+
 /// Lowercase alphabet.
 const ALPHABET: [u8; 26] = *b"abcdefghijklmnopqrstuvwxyz";
+
 
 /// Adjust the case of ord to match the case of to_match
 const fn match_case(ord: u8, to_match: u8) -> u8 {
@@ -34,12 +64,14 @@ fn identity(s: &str) -> String {
 /// Wrapper function to call a specific cipher by [`Type`].
 pub fn encrypt(plaintext: &str, cipher_type: Type, key: Option<String>) -> String {
     let rng = &mut thread_rng();
+    use substitution::*;
     match cipher_type {
         Identity => identity(plaintext),
-        Rot13 => substitution::rot13(plaintext),
-        Caesar => substitution::caeser(plaintext, rng),
-        Aristocrat => substitution::aristocrat(plaintext, rng),
-        Patristocrat => substitution::patristocrat(plaintext, rng),
+        Rot13 => rot13(plaintext),
+        Caesar => caeser(plaintext, rng),
+        Aristocrat => aristocrat(plaintext, rng),
+        Patristocrat => patristocrat(plaintext, rng),
+        K1Patristocrat => patristocrat_k1(plaintext, key, rng),
         Morbit => morse::morbit(plaintext, key),
         //Cryptarithm => cryptarithm::cryptarithm(&mut rng),
     }
