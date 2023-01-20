@@ -1,26 +1,35 @@
 //! Definition of subtitution ciphers.
 //!
-//! [`rot13`], [`caeser`], [`aristocrat`]
+//! [`rot13`], [`caeser`], [`aristocrat`], [`patristocrat`]
 
 use super::{match_case, shift_letter, ALPHABET};
 use rand::prelude::*;
 
+const ROT13_MAPPING: &[u8] = b"nopqrstuvwxyzabcdefghijklm";
+
+/// Generic function that implements the various substitution ciphers
+fn substitute(s: &str, mapping: &[u8], keep_whitespace: bool) -> String {
+    let mut out = String::new();
+    for b in s.bytes() {
+        if !keep_whitespace && b.is_ascii_whitespace() {
+            continue;
+        }
+
+        if b.is_ascii_alphabetic() {
+            out.push(match_case(mapping[(b.to_ascii_uppercase() - b'A') as usize], b) as char);
+        } else {
+            out.push(b as char);
+        }
+    }
+
+    out
+}
 
 /// Shift each letter by 13.
 ///
 /// The cipher shifts each letter by 13. It is essentially a Caeser cipher but with a fixed shift.
 pub fn rot13(s: &str) -> String {
-    let mut out = Vec::with_capacity(s.len());
-
-    for b in s.bytes() {
-        if b.is_ascii_alphabetic() {
-            out.push(shift_letter(b, 13));
-        } else {
-            out.push(b);
-        }
-    }
-
-    String::from_utf8(out).unwrap()
+    substitute(s, ROT13_MAPPING, true)
 }
 
 /// Randomly choose a shift `s` and shift each letter by `s`.
@@ -28,8 +37,6 @@ pub fn caeser<R>(s: &str, rng: &mut R) -> String
 where
     R: Rng + ?Sized,
 {
-    let mut out = Vec::with_capacity(s.len());
-
     let shift = loop {
         let x = rng.next_u32();
         if x != 0 {
@@ -37,15 +44,12 @@ where
         }
     } as u8;
 
-    for b in s.bytes() {
-        if b.is_ascii_alphabetic() {
-            out.push(shift_letter(b, shift));
-        } else {
-            out.push(b);
-        }
+    let mut mapping = [0u8; 26];
+    for (i, &b) in ALPHABET.iter().enumerate() {
+        mapping[i] = shift_letter(b, shift)
     }
 
-    String::from_utf8(out).unwrap()
+    substitute(s, &mapping, true)
 }
 
 /// Monoalphabetic substitution cipher.
@@ -56,28 +60,15 @@ pub fn aristocrat<R>(s: &str, rng: &mut R) -> String
 where
     R: Rng + ?Sized,
 {
-    let mut out = Vec::with_capacity(s.len());
-
-    let mut mapping: Vec<_> = ALPHABET.choose_multiple(rng, 26).collect();
+    let mut mapping: Vec<_> = ALPHABET.choose_multiple(rng, 26).copied().collect();
     loop {
-        if (mapping.iter().zip(ALPHABET.iter())).all(|p| *p.0 != p.1) {
+        if (mapping.iter().zip(ALPHABET.iter())).all(|p| p.0 != p.1) {
             break;
         }
         mapping.shuffle(rng);
     }
 
-    for b in s.bytes() {
-        if b.is_ascii_alphabetic() {
-            out.push(match_case(
-                *mapping[(b.to_ascii_uppercase() - b'A') as usize],
-                b,
-            ));
-        } else {
-            out.push(b);
-        }
-    }
-
-    String::from_utf8(out).unwrap()
+    substitute(s, &mapping, true)
 }
 
 /// Similar to aristocrat, but removes all spaces.
@@ -85,32 +76,15 @@ pub fn patristocrat<R>(s: &str, rng: &mut R) -> String
 where
     R: Rng + ?Sized,
 {
-    let mut out = Vec::with_capacity(s.len());
-
-    let mut mapping: Vec<_> = ALPHABET.choose_multiple(rng, 26).collect();
+    let mut mapping: Vec<_> = ALPHABET.choose_multiple(rng, 26).copied().collect();
     loop {
-        if (mapping.iter().zip(ALPHABET.iter())).all(|p| *p.0 != p.1) {
+        if (mapping.iter().zip(ALPHABET.iter())).all(|p| p.0 != p.1) {
             break;
         }
         mapping.shuffle(rng);
     }
 
-    for b in s.bytes() {
-        if b.is_ascii_whitespace() {
-            continue
-        }
-
-        if b.is_ascii_alphabetic() {
-            out.push(match_case(
-                *mapping[(b.to_ascii_uppercase() - b'A') as usize],
-                b,
-            ));
-        } else {
-            out.push(b);
-        }
-    }
-
-    String::from_utf8(out).unwrap()
+    substitute(s, &mapping, false)
 }
 
 #[cfg(test)]

@@ -7,7 +7,7 @@ use std::env;
 use std::sync::{Arc, RwLock};
 
 use iron::prelude::*;
-use juniper::{DefaultScalarValue, EmptySubscription, FieldResult, FieldError, Value};
+use juniper::{DefaultScalarValue, EmptySubscription, FieldError, FieldResult, Value};
 use juniper_iron::{GraphQLHandler, GraphiQLHandler};
 use logger::Logger;
 use mount::Mount;

@@ -23,9 +23,8 @@ pub enum Type {
     /// Monoalphabetic substitution. See ['crate::ciphers::patristocrat`] for more details.
     Patristocrat,
     Morbit,
-
-// Too unoptimized for now
-//    Cryptarithm,
+    // Too unoptimized for now
+    //    Cryptarithm,
 }
 
 /// The length of a cipher.
