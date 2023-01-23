@@ -70,7 +70,8 @@ pub fn encrypt(plaintext: &str, cipher_type: Type, key: Option<String>) -> Strin
         Caesar => caeser(plaintext, rng),
         Aristocrat => aristocrat(plaintext, rng),
         Patristocrat => patristocrat(plaintext, rng),
-        K1Patristocrat => patristocrat_k1(plaintext, key, rng),
+        PatristocratK1 => patristocrat_k1(plaintext, key, rng),
+        PatristocratK2 => patristocrat_k2(plaintext, key, rng),
         Morbit => morse::morbit(plaintext, key),
         //Cryptarithm => cryptarithm::cryptarithm(&mut rng),
     }

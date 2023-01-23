@@ -22,11 +22,12 @@ pub enum Type {
     Aristocrat,
     /// Monoalphabetic substitution, spaces ignored. See [`crate::ciphers::patristocrat`] for more details.
     Patristocrat,
-
     /// Monoalphabetic substitution, spaces ignored, keyed plaintext alphabet. See
     /// [`crate::ciphers::patristocrat_k1`] for more details.
     PatristocratK1,
-
+    /// Monoalphabetic substitution, spaces ignored, keyed ciphertext alphabet. See
+    /// [`crate::ciphers::patristocrat_k1`] for more details.
+    PatristocratK2,
     Morbit,
     // Too unoptimized for now
     //    Cryptarithm,
@@ -43,6 +44,21 @@ pub enum Length {
     Medium,
     /// Quotations ranging from 120 to 150 bytes.
     Long,
+}
+
+#[derive(GraphQLObject)]
+pub struct Answer {
+    /// The plaintext
+    pub plaintext: String,
+
+    /// The key used to encrypt, if applicable.
+    pub key: Option<String>,
+}
+
+impl Answer {
+    pub fn new(plaintext: String, key: Option<String>) -> Self {
+        Self { plaintext, key }
+    }
 }
 
 #[derive(GraphQLObject)]
@@ -96,7 +112,7 @@ impl Cryptogram {
         let ciphertext = encrypt(&quote.text, r#type, key.clone()).to_uppercase();
 
         let frequencies = match r#type {
-            Identity | Caesar | Aristocrat | Patristocrat | PatristocratK1 => {
+            Identity | Caesar | Aristocrat | Patristocrat | PatristocratK1 | PatristocratK2 => {
                 Some(frequencies(&ciphertext))
             }
             _ => None,

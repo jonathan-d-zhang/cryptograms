@@ -102,10 +102,16 @@ where
     substitute(s, &mapping, false)
 }
 
+///
 pub fn patristocrat_k1<R>(s: &str, key: Option<String>, rng: &mut R) -> String
 where
     R: Rng + ?Sized,
 {
+    // the final mapping we're trying to create contains a key in the plaintext alphabet, mapped to
+    // the ciphertext. This looks something like
+    // samplekybcdfghijnoqrtuvwxz
+    // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+    // In this case, our key is "samplekey".
     let mut key_chars = [false; 255];
 
     let mut mapping = [0u8; 26];
@@ -136,14 +142,68 @@ where
         }
     }
 
-    // finally, shift the mapping until no letter maps to itself
-    // note we don't shuffle like in patristocrat because we must keep the key in place
+    // finally, shift the plaintext until no letter maps to itself
+    // note: we don't shuffle like in `patristocrat` because we must keep the key in place
     loop {
         if (mapping.iter().zip(ALPHABET.iter())).all(|p| p.0 != p.1) {
             break;
         }
         mapping.rotate_right(1);
     }
+
+    substitute(s, &mapping, false)
+}
+
+pub fn patristocrat_k2<R>(s: &str, key: Option<String>, rng: &mut R) -> String
+where
+    R: Rng + ?Sized,
+{
+    // In k2, the ciphertext contains the key. For example, with the key "SAMPLEKEY", our mapping
+    // without shifts would be
+    // abcdefghijklmnopqrstuvwxyz
+    // SAMPLEKYBCDFGHIJNOQRTUVWXZ
+    // we would then shift the ciphertext until no letters map to themselves. This is almost
+    // identical to k1 patristocrat.
+    let mut key_chars = [false; 255];
+
+    let mut mapping = [0u8; 26];
+
+    // unwrap is safe because WORDS is guaranteed non-empty
+    let key = key
+        .as_ref()
+        .unwrap_or_else(|| WORDS.choose(rng).unwrap())
+        .to_lowercase();
+
+    let mut i = 0;
+
+    // first, map the first `key.len()` plaintext chars to the key.
+    for b in key.bytes() {
+        if key_chars[b as usize] {
+            continue;
+        }
+        mapping[i] = b;
+        key_chars[b as usize] = true;
+        i += 1;
+    }
+
+    // next, we map the rest of the plaintext to the rest of the ciphertext alphabet
+    for b in ALPHABET.into_iter() {
+        if !key_chars[b as usize] {
+            mapping[i] = b;
+            i += 1;
+        }
+    }
+
+    // finally, shift the mapping until no letter maps to itself
+    // note: we don't shuffle like in patristocrat because we must keep the key in place
+    loop {
+        if (mapping.iter().zip(ALPHABET.iter())).all(|p| p.0 != p.1) {
+            break;
+        }
+        mapping.rotate_left(1);
+    }
+
+    println!("mapping={:?}", String::from_utf8_lossy(&mapping));
 
     substitute(s, &mapping, false)
 }
@@ -189,10 +249,20 @@ mod tests {
 
     #[test]
     fn test_patristocrat_k1() {
-        // teskyabcdfghijlmnopqruvwxz
-        // ABCDEFGHIJKLMNOPQRSTUVWXYZ
         let res = patristocrat_k1(
             "bcdefghijklmnopqrstuvwxyza",
+            Some(String::from("testkey")),
+            &mut StepRng::new(0, 1),
+        );
+        let ans = "tesky abcdf ghijl mnopq ruvwx z";
+
+        assert_eq!(res, ans);
+    }
+
+    #[test]
+    fn test_patristocrat_k2() {
+        let res = patristocrat_k2(
+            "yzabcdefghijklmnopqrstuvwx",
             Some(String::from("testkey")),
             &mut StepRng::new(0, 1),
         );

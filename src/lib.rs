@@ -17,7 +17,7 @@ use postgres::{Client, NoTls};
 pub mod ciphers;
 pub mod cryptogram;
 mod quotes;
-pub use cryptogram::{Cryptogram, Length, Type};
+pub use cryptogram::{Answer, Cryptogram, Length, Type};
 
 struct Context {
     db: Client,
@@ -52,17 +52,20 @@ impl Query {
         "0.1"
     }
 
-    // TODO: Return the key used also
-
-    /// Request plaintext for a specific cryptogram by token.
-    fn plaintext(context: &T, token: i32) -> FieldResult<String> {
+    /// Request plaintext and key for a specific cryptogram by token.
+    fn answer(context: &T, token: i32) -> FieldResult<Answer> {
         let row = context.write().unwrap().db.query_one(
-            "SELECT token, plaintext FROM cryptograms WHERE token = $1",
+            "SELECT token, plaintext, key FROM cryptograms WHERE token = $1",
             &[&token],
         );
 
         match row {
-            Ok(r) => Ok(r.get(1)),
+            Ok(r) => {
+                let plaintext: String = r.get(1);
+                let key: Option<String> = r.get(2);
+                println!("plaintext={plaintext:?}, key={key:?}");
+                Ok(Answer::new(plaintext, key))
+            }
             Err(_) => Err(FieldError::new("Invalid token", Value::null())),
         }
     }
@@ -84,14 +87,18 @@ impl Mutation {
     ) -> Cryptogram {
         let cryptogram = Cryptogram::new(plaintext, length, r#type, key);
 
-        // TODO: insert key
+        println!(
+            "inserting token={:?}, plaintext={:?}, key={:?}",
+            cryptogram.token, cryptogram.plaintext, cryptogram.key
+        );
+
         context
             .write()
             .unwrap()
             .db
             .execute(
-                "INSERT INTO cryptograms (token, plaintext) VALUES($1, $2)",
-                &[&cryptogram.token, &cryptogram.plaintext],
+                "INSERT INTO cryptograms (token, plaintext, key) VALUES($1, $2, $3)",
+                &[&cryptogram.token, &cryptogram.plaintext, &cryptogram.key],
             )
             .unwrap();
 
@@ -129,7 +136,8 @@ pub fn make_server() {
         .batch_execute(
             "CREATE TABLE IF NOT EXISTS cryptograms (
             token INT PRIMARY KEY,
-            plaintext VARCHAR(160)
+            plaintext VARCHAR(160),
+            key VARCHAR(20)
         )",
         )
         .unwrap();
