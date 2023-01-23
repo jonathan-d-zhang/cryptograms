@@ -8,7 +8,7 @@ use std::hash::{Hash, Hasher};
 
 /// Describe the type of cipher used to encrypt a [`Cryptogram`]
 ///
-/// Each of the variants should have an accompanying function with a lowercased name.
+/// Each of the variants has an accompanying function with a lowercased name.
 /// For example, [`Identity`] has the function [`crate::ciphers::identity`].
 #[derive(GraphQLEnum, Debug, Copy, Clone)]
 pub enum Type {
@@ -31,6 +31,9 @@ pub enum Type {
     Morbit,
     // Too unoptimized for now
     //    Cryptarithm,
+
+    // TODO: document hill
+    Hill,
 }
 
 /// The length of a cipher.
@@ -118,6 +121,7 @@ impl Cryptogram {
             _ => None,
         };
 
+        // TODO: get generated key if applicable
         Self {
             ciphertext: ciphertext.clone(),
             r#type,

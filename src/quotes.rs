@@ -63,7 +63,7 @@ pub fn fetch_quote(length: Length) -> Quote {
 
     let quote = right_length.choose(&mut thread_rng()).unwrap();
 
-    log::trace!("Selected {:?}", quote.quote);
+    log::debug!("Selected {:?}", quote.quote);
 
     Quote::new(quote.quote.clone(), Some(quote.author.clone()))
 }

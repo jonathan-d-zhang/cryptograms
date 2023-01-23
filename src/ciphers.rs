@@ -10,6 +10,7 @@ use rand::prelude::*;
 mod cryptarithm;
 mod morse;
 mod substitution;
+mod hill;
 
 lazy_static! {
     /// Stores words suitable for use as keys in patristocrats or operands in cryptarithms
@@ -65,15 +66,16 @@ pub fn encrypt(plaintext: &str, cipher_type: Type, key: Option<String>) -> Strin
     let rng = &mut thread_rng();
     use substitution::*;
     match cipher_type {
-        Identity => identity(plaintext),
-        Rot13 => rot13(plaintext),
-        Caesar => caeser(plaintext, rng),
         Aristocrat => aristocrat(plaintext, rng),
+        Caesar => caeser(plaintext, rng),
+        // Cryptarithm => cryptarithm::cryptarithm(&mut rng),
+        Hill => hill::hill(plaintext, key, rng),
+        Identity => identity(plaintext),
+        Morbit => morse::morbit(plaintext, key),
         Patristocrat => patristocrat(plaintext, rng),
         PatristocratK1 => patristocrat_k1(plaintext, key, rng),
         PatristocratK2 => patristocrat_k2(plaintext, key, rng),
-        Morbit => morse::morbit(plaintext, key),
-        //Cryptarithm => cryptarithm::cryptarithm(&mut rng),
+        Rot13 => rot13(plaintext),
     }
 }
 
