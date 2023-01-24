@@ -2,15 +2,15 @@
 
 #![warn(missing_docs)]
 
-pub use super::cryptogram::Type;
+use super::cryptogram::Type;
 use super::cryptogram::Type::*;
 use lazy_static::lazy_static;
 use rand::prelude::*;
 
-pub mod cryptarithm;
-pub mod morse;
-pub mod substitution;
-pub mod hill;
+mod cryptarithm;
+mod hill;
+mod morse;
+mod substitution;
 
 lazy_static! {
     /// Stores words suitable for use as keys in patristocrats or operands in cryptarithms
@@ -24,7 +24,8 @@ lazy_static! {
         let words: Vec<_> = contents.trim()
             .split(',')
             .filter_map(|s| {
-                if 3 < s.len() && s.len() < 8 {
+                // avoid words like "the" or "what" and don't want long, obscure words
+                if 4 < s.len() && s.len() < 8 {
                     Some(s.to_string())
                 } else {
                     None
@@ -57,25 +58,39 @@ const fn shift_letter(b: u8, by: u8) -> u8 {
 }
 
 /// Returns the input string unchanged.
-pub fn identity(s: &str) -> String {
-    s.to_string()
+fn identity(s: &str) -> Cipher {
+    Cipher::new(s.to_string(), None)
 }
 
-/// Wrapper function to call a specific cipher by [`Type`].
-pub fn encrypt(plaintext: &str, cipher_type: Type, key: Option<String>) -> String {
-    let rng = &mut thread_rng();
-    use substitution::*;
-    match cipher_type {
-        Aristocrat => aristocrat(plaintext, rng),
-        Caesar => caeser(plaintext, rng),
-        // Cryptarithm => cryptarithm::cryptarithm(&mut rng),
-        Hill => hill::hill(plaintext, key, rng),
-        Identity => identity(plaintext),
-        Morbit => morse::morbit(plaintext, key),
-        Patristocrat => patristocrat(plaintext, rng),
-        PatristocratK1 => patristocrat_k1(plaintext, key, rng),
-        PatristocratK2 => patristocrat_k2(plaintext, key, rng),
-        Rot13 => rot13(plaintext),
+/// The type returned by the various encryption functions in this library.
+#[derive(Debug)]
+pub struct Cipher {
+    /// The ciphertext
+    pub ciphertext: String,
+    /// The key
+    pub key: Option<String>,
+}
+
+impl Cipher {
+    fn new(ciphertext: String, key: Option<String>) -> Self {
+        Self { ciphertext, key }
+    }
+
+    /// Wrapper function to call a specific cipher by [`Type`].
+    pub fn encrypt(plaintext: &str, cipher_type: Type, key: Option<String>) -> Self {
+        let rng = &mut thread_rng();
+        match cipher_type {
+            Aristocrat => substitution::aristocrat(plaintext, rng),
+            Caesar => substitution::caeser(plaintext, rng),
+            // Cryptarithm => cryptarithm::cryptarithm(&mut rng),
+            Hill => hill::hill(plaintext, key, rng),
+            Identity => identity(plaintext),
+            Morbit => morse::morbit(plaintext, key),
+            Patristocrat => substitution::patristocrat(plaintext, rng),
+            PatristocratK1 => substitution::patristocrat_k1(plaintext, key, rng),
+            PatristocratK2 => substitution::patristocrat_k2(plaintext, key, rng),
+            Rot13 => substitution::rot13(plaintext),
+        }
     }
 }
 

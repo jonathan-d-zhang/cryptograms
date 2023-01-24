@@ -131,7 +131,8 @@ pub fn make_server() {
     let mut chain = Chain::new(mount);
     chain.link(Logger::new(None));
 
-    let mut client = Client::connect("postgres://postgres:postgres@postgres:5432?", NoTls).expect("Could not connect to db");
+    let mut client = Client::connect("postgres://postgres:postgres@postgres:5432?", NoTls)
+        .expect("Could not connect to db");
 
     client
         .batch_execute(

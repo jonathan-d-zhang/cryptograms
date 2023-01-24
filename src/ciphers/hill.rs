@@ -24,6 +24,7 @@
 //! ciphertext. This process is repeated until the entire plaintext is processed.
 //! The resulting ciphertext is "bdzb"
 
+use super::Cipher;
 use rand::prelude::*;
 
 const KEY_LENGTH: usize = 4;
@@ -37,7 +38,14 @@ where
 }
 
 fn matmul(plaintext: &[u8], key: Vec<Vec<u8>>) -> Vec<u8> {
-    log::trace!("Matmulling plaintext{:?} with key={:?}", String::from_utf8_lossy(plaintext), key.clone().into_iter().map(|r| String::from_utf8(r).unwrap()).collect::<Vec<_>>());
+    log::trace!(
+        "Matmulling plaintext{:?} with key={:?}",
+        String::from_utf8_lossy(plaintext),
+        key.clone()
+            .into_iter()
+            .map(|r| String::from_utf8(r).unwrap())
+            .collect::<Vec<_>>()
+    );
     // our plaintexts are limited to 160 bytes, naive algo is fine
     let mut result = Vec::new();
 
@@ -65,15 +73,14 @@ fn is_perfect_square(n: usize) -> bool {
         if t == n {
             return true;
         } else if t > n {
-            return false
+            return false;
         }
 
         i += 1;
     }
 }
 
-///
-pub fn hill<R>(plaintext: &str, key: Option<String>, rng: &mut R) -> String
+pub fn hill<R>(plaintext: &str, key: Option<String>, rng: &mut R) -> Cipher
 where
     R: Rng + ?Sized,
 {
@@ -109,7 +116,7 @@ where
     filtered.extend("z".repeat(to_pad).chars());
 
     // convert 1-d key into square matrix
-    let mut bytes = key.into_iter();
+    let mut bytes = key.clone().into_iter();
     let mut matrix = vec![vec![0; side_length]; side_length];
     for i in 0..side_length {
         for j in 0..side_length {
@@ -119,7 +126,10 @@ where
 
     let r = matmul(filtered.as_bytes(), matrix);
 
-    String::from_utf8(r).unwrap()
+    Cipher::new(
+        String::from_utf8(r).unwrap(),
+        Some(String::from_utf8(key).unwrap()),
+    )
 }
 
 #[cfg(test)]
@@ -160,5 +170,4 @@ mod tests {
         assert!(is_perfect_square(9));
         assert!(!is_perfect_square(15));
     }
-
 }

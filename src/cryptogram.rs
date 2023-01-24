@@ -1,6 +1,6 @@
 //! This module defines the Cryptogram object for the public interface.
 
-use super::ciphers::encrypt;
+use super::ciphers::Cipher;
 use super::quotes;
 
 use std::collections::hash_map::DefaultHasher;
@@ -31,7 +31,6 @@ pub enum Type {
     Morbit,
     // Too unoptimized for now
     //    Cryptarithm,
-
     /// Polyalphabetic substitution, spaces ignored. See ['crate::ciphers::hill`] for more details.
     Hill,
     // TODO: Add xenocrypt
@@ -113,23 +112,22 @@ impl Cryptogram {
             None => quotes::fetch_quote(length),
         };
 
-        let ciphertext = encrypt(&quote.text, r#type, key.clone()).to_uppercase();
+        let cipher = Cipher::encrypt(&quote.text, r#type, key);
 
         let frequencies = match r#type {
             Identity | Caesar | Aristocrat | Patristocrat | PatristocratK1 | PatristocratK2 => {
-                Some(frequencies(&ciphertext))
+                Some(frequencies(&cipher.ciphertext))
             }
             _ => None,
         };
 
-        // TODO: get generated key if applicable
         Self {
-            ciphertext: ciphertext.clone(),
+            ciphertext: cipher.ciphertext.to_uppercase(),
             r#type,
             length,
             author: quote.author,
-            token: compute_hash(&ciphertext),
-            key,
+            token: compute_hash(&cipher.ciphertext),
+            key: cipher.key,
             plaintext: quote.text,
             frequencies,
         }
