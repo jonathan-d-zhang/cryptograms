@@ -24,6 +24,8 @@
 //! ciphertext. This process is repeated until the entire plaintext is processed.
 //! The resulting ciphertext is "bdzb"
 
+use std::cmp::Ordering;
+
 use super::Cipher;
 use rand::prelude::*;
 
@@ -70,13 +72,11 @@ fn is_perfect_square(n: usize) -> bool {
     let mut i = 1;
     loop {
         let t = i * i;
-        if t == n {
-            return true;
-        } else if t > n {
-            return false;
+        match t.cmp(&n) {
+            Ordering::Equal => return true,
+            Ordering::Greater => return false,
+            Ordering::Less => i += 1,
         }
-
-        i += 1;
     }
 }
 
@@ -113,14 +113,14 @@ where
     // if the length is not divisible by `side_length`, pad with 'z'
     let to_pad = filtered.len() % side_length;
 
-    filtered.extend("z".repeat(to_pad).chars());
+    filtered.push_str(&"z".repeat(to_pad));
 
     // convert 1-d key into square matrix
     let mut bytes = key.clone().into_iter();
     let mut matrix = vec![vec![0; side_length]; side_length];
-    for i in 0..side_length {
-        for j in 0..side_length {
-            matrix[i][j] = bytes.next().unwrap();
+    for row in matrix.iter_mut() {
+        for item in row.iter_mut() {
+            *item = bytes.next().unwrap();
         }
     }
 
@@ -150,7 +150,7 @@ mod tests {
         let mut rng = StepRng::new(0, 1);
         let res = hill("abcd", Some("abcd".into()), &mut rng);
 
-        assert_eq!(res, "bddn");
+        assert_eq!(res.ciphertext, "bddn");
     }
 
     #[test]
