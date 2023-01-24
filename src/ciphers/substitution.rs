@@ -102,7 +102,7 @@ where
     substitute(s, &mapping, false)
 }
 
-///
+/// Essentially the same as patristocrat, but uses a keyed plaintext.
 pub fn patristocrat_k1<R>(s: &str, key: Option<String>, rng: &mut R) -> String
 where
     R: Rng + ?Sized,
@@ -154,6 +154,7 @@ where
     substitute(s, &mapping, false)
 }
 
+/// Essentially the same as patristocrat, but uses a keyed ciphertext.
 pub fn patristocrat_k2<R>(s: &str, key: Option<String>, rng: &mut R) -> String
 where
     R: Rng + ?Sized,

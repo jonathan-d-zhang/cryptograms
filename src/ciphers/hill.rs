@@ -1,3 +1,29 @@
+//! Hill Cipher
+//!
+//! This cipher uses matrix multiplication to encrypt and ignores spaces and symbols.
+//!
+//! Given a plaintext, which can be any length,
+//! and a key, whose length must be a perfect square, the encryption is done as follows.
+//! First the key is turned into an `NxN` matrix, where `N` is the square root of the length of the
+//! key.
+//! Then, each substring of `N` elements in the plaintext is multiplied by the key mod 26.
+//!
+//! If the plaintext is not a multiple of `N`, the plaintext is padded with "z" until it is.
+//!
+//! For example, if wanted to encrypt the plaintext "abc" with the key "abcd", we would start by
+//! first computing `N`. In this case, `N=2`.
+//! Next, we pad the plaintext with "z" until it is divisible by `N`.
+//! Our resulting string is now "abcz".
+//! We also must turn our 1-d key into a 2-d matrix with row and column lengths equal to `N`. In this case, "abcd" results in the key:
+//! [
+//!     [0, 1],
+//!     [2, 3],
+//! ].
+//! Each substring of length `2` is then matrix multiplied by the key.
+//! The first substring is "ab". `key * [[0], [1]] = [1, 3] mod 26`. These are the first 2 characters of the
+//! ciphertext. This process is repeated until the entire plaintext is processed.
+//! The resulting ciphertext is "bdzb"
+
 use rand::prelude::*;
 
 const KEY_LENGTH: usize = 4;

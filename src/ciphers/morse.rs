@@ -1,3 +1,5 @@
+//! Contains the two morse code ciphers, Morbit and Pollux.
+
 mod morbit;
 pub use morbit::morbit;
 

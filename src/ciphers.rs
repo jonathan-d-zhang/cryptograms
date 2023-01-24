@@ -1,4 +1,4 @@
-//! This module contains the implementation of the ciphers.
+//! This module contains the implementation of the various ciphers.
 
 #![warn(missing_docs)]
 
@@ -7,10 +7,10 @@ use super::cryptogram::Type::*;
 use lazy_static::lazy_static;
 use rand::prelude::*;
 
-mod cryptarithm;
-mod morse;
-mod substitution;
-mod hill;
+pub mod cryptarithm;
+pub mod morse;
+pub mod substitution;
+pub mod hill;
 
 lazy_static! {
     /// Stores words suitable for use as keys in patristocrats or operands in cryptarithms
@@ -57,7 +57,7 @@ const fn shift_letter(b: u8, by: u8) -> u8 {
 }
 
 /// Returns the input string unchanged.
-fn identity(s: &str) -> String {
+pub fn identity(s: &str) -> String {
     s.to_string()
 }
 

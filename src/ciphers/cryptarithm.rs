@@ -1,3 +1,10 @@
+//! Cryptarithm generator.
+//!
+//! A cryptarithm, or alphametic, is a puzzle in which you are given a mathematical equation where
+//! the numbers are represented by letters. The canonical example is "SEND + MORE = MONEY". The
+//! solution is O=0, M=1, Y=2, E=5, N=6, D=7, R=8, S=9.
+//!
+//! See [this](https://en.wikipedia.org/wiki/Verbal_arithmetic) for more info.
 #![allow(dead_code)]
 
 use itertools::Itertools;
@@ -208,6 +215,9 @@ fn create_cryptarithm(a: &str, b: &str, words: &[&String]) -> Option<String> {
     None
 }
 
+/// Generates a cryptarithm
+///
+/// See module level docs for more info about cryptarithms
 pub fn cryptarithm<R: Rng + ?Sized>(rng: &mut R) -> String {
     loop {
         let words: Vec<&String> = WORDS.choose_multiple(rng, 10).collect();

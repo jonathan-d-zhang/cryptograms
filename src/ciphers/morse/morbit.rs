@@ -28,6 +28,11 @@ fn map_key(v: &Vec<u8>) -> Vec<usize> {
     out
 }
 
+/// Morbit Cipher
+///
+/// Morbit is an over-encryption of Morse code, similar to Fractionated Morse Code. The plaintext
+/// is first converted into Morse code. Then, pairs of the Morse letters are mapped by the key
+/// to the ciphertext.
 pub fn morbit(s: &str, key: Option<String>) -> String {
     let key = key
         .unwrap_or_else(|| generate_key(&mut thread_rng()))

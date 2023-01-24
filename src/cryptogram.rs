@@ -9,31 +9,32 @@ use std::hash::{Hash, Hasher};
 /// Describe the type of cipher used to encrypt a [`Cryptogram`]
 ///
 /// Each of the variants has an accompanying function with a lowercased name.
-/// For example, [`Identity`] has the function [`crate::ciphers::identity`].
+/// For example, [`Type::Identity`] has the function [`crate::ciphers::identity`].
 #[derive(GraphQLEnum, Debug, Copy, Clone)]
 pub enum Type {
     /// Returns the plaintext unchanged. See [`crate::ciphers::identity`] for more details.
     Identity,
-    /// Shift letters by 13. See [`crate::ciphers::rot13`] for more details.
+    /// Shift letters by 13. See [`crate::ciphers::substitution::rot13`] for more details.
     Rot13,
-    /// Shift letters by a random amount. See [`crate::ciphers::caeser`] for more details.
+    /// Shift letters by a random amount. See [`crate::ciphers::substitution::caeser`] for more details.
     Caesar,
-    /// Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details.
+    /// Monoalphabetic substitution. See [`crate::ciphers::substitution::aristocrat`] for more details.
     Aristocrat,
-    /// Monoalphabetic substitution, spaces ignored. See [`crate::ciphers::patristocrat`] for more details.
+    /// Monoalphabetic substitution, spaces ignored. See [`crate::ciphers::substitution::patristocrat`] for more details.
     Patristocrat,
     /// Monoalphabetic substitution, spaces ignored, keyed plaintext alphabet. See
-    /// [`crate::ciphers::patristocrat_k1`] for more details.
+    /// [`crate::ciphers::substitution::patristocrat_k1`] for more details.
     PatristocratK1,
     /// Monoalphabetic substitution, spaces ignored, keyed ciphertext alphabet. See
-    /// [`crate::ciphers::patristocrat_k1`] for more details.
+    /// [`crate::ciphers::substitution::patristocrat_k1`] for more details.
     PatristocratK2,
     Morbit,
     // Too unoptimized for now
     //    Cryptarithm,
 
-    // TODO: document hill
+    /// Polyalphabetic substitution, spaces ignored. See ['crate::ciphers::hill`] for more details.
     Hill,
+    // TODO: Add xenocrypt
 }
 
 /// The length of a cipher.
@@ -93,8 +94,8 @@ pub struct Cryptogram {
 impl Cryptogram {
     /// Create a Cryptogram from plaintext, length, and type
     ///
-    /// If plaintext is not given, then a random quotation is selected with
-    /// [`crate::quotes::fetch_quote`]. The default `length` is [`Length::Medium`] and the default `r#type`
+    /// If plaintext is not given, then a random quotation is selected.
+    /// The default `length` is [`Length::Medium`] and the default `r#type`
     /// is [`Type::Identity`], though this may change in the future.
     pub fn new(
         plaintext: Option<String>,
