@@ -9,9 +9,8 @@
 #[macro_use]
 extern crate lazy_static;
 
-use env_logger;
 use graphql_client::{reqwest::post_graphql_blocking as post_graphql, GraphQLQuery};
-use log;
+
 use reqwest::blocking::Client;
 use std::io::set_output_capture;
 use std::panic::catch_unwind;
@@ -44,7 +43,7 @@ fn main() -> ExitCode {
 
     // Run the tests
     let mut errors = Vec::with_capacity(TESTS.len());
-    for &(test, name) in TESTS.into_iter() {
+    for &(test, name) in TESTS.iter() {
         let res = run_test(test);
         let output = match res {
             Ok(_) => "\x1b[32mok\x1b[37m",
@@ -137,7 +136,7 @@ fn setup() -> (Vec<TempPath>, Arc<Mutex<Vec<u8>>>) {
 
     log::debug!("Created temp quotes file at {:?}", quotes_path);
 
-    std::fs::write(&quotes_path,
+    std::fs::write(quotes_path,
         r#"[{"quote": "The quick brown fox jumps over the lazy dog. Can't-I'm<>12932. Cwm fjord bank glyphs vext quiz!", "author": "jz9", "genre": "testing"}]"#
         .as_bytes(),
     )
@@ -156,7 +155,7 @@ fn setup() -> (Vec<TempPath>, Arc<Mutex<Vec<u8>>>) {
 
     //log::debug!("Created temp words file at {:?}", words_path);
 
-    std::fs::write(&words_path, r"send,money,more".as_bytes()).unwrap();
+    std::fs::write(words_path, r"send,money,more".as_bytes()).unwrap();
 
     std::env::set_var("WORDS_FILE", words_path);
     //    std::env::set_var("WORDS_FILE", "words.txt");
@@ -199,7 +198,7 @@ fn test_api_version() {
     let response_body = post_graphql::<Version, _>(&CLIENT, URL, version::Variables).unwrap();
 
     let data: version::ResponseData = response_body.data.unwrap();
-    println!("{:?}", data);
+    println!("{data:?}");
 
     assert_eq!(data.api_version, "0.1")
 }

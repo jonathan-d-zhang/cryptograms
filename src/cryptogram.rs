@@ -58,6 +58,7 @@ pub struct Answer {
 }
 
 impl Answer {
+    #[must_use]
     pub fn new(plaintext: String, key: Option<String>) -> Self {
         Self { plaintext, key }
     }
@@ -101,7 +102,7 @@ impl Cryptogram {
         r#type: Option<Type>,
         key: Option<String>,
     ) -> CipherResult<Self> {
-        use Type::*;
+        use Type::{Aristocrat, Caesar, Identity, Patristocrat, PatristocratK1, PatristocratK2};
         let r#type = r#type.unwrap_or(Identity);
 
         let length = length.unwrap_or(Length::Medium);

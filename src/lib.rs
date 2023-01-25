@@ -18,7 +18,7 @@ pub mod ciphers;
 pub mod cryptogram;
 mod quotes;
 
-pub use cryptogram::{Answer, Cryptogram, Length, Type};
+pub(crate) use cryptogram::{Answer, Cryptogram, Length, Type};
 
 struct Context {
     db: Client,
@@ -38,15 +38,15 @@ impl iron::typemap::Key for Context {
 // and will prevent deadlocks
 unsafe impl Sync for Context {}
 
-type T = Arc<RwLock<Context>>;
+type ContextLock = Arc<RwLock<Context>>;
 
-fn context_factory<'a>(r: &'a mut Request) -> IronResult<T> {
+fn context_factory<'a>(r: &'a mut Request) -> IronResult<ContextLock> {
     Ok(r.extensions.get::<State<Context>>().unwrap().clone())
 }
 
 struct Query;
 
-#[graphql_object(Context=T)]
+#[graphql_object(Context=ContextLock)]
 impl Query {
     /// The api version.
     fn api_version() -> &str {
@@ -54,7 +54,7 @@ impl Query {
     }
 
     /// Request plaintext and key for a specific cryptogram by token.
-    fn answer(context: &T, token: i32) -> FieldResult<Answer> {
+    fn answer(context: &ContextLock, token: i32) -> FieldResult<Answer> {
         let row = context.write().unwrap().db.query_one(
             "SELECT token, plaintext, key FROM cryptograms WHERE token = $1",
             &[&token],
@@ -74,13 +74,13 @@ impl Query {
 
 struct Mutation;
 
-#[graphql_object(Context=T)]
+#[graphql_object(Context=ContextLock)]
 impl Mutation {
     /// Request a new ciphertext.
     ///
     /// The argument `key` does nothing if the chosen `Type` does not need a key.
     fn cryptogram(
-        context: &T,
+        context: &ContextLock,
         plaintext: Option<String>,
         length: Option<Length>,
         r#type: Option<Type>,
@@ -127,7 +127,7 @@ pub fn make_server() {
         context_factory,
         Query,
         Mutation,
-        EmptySubscription::<T>::new(),
+        EmptySubscription::<ContextLock>::new(),
     );
 
     let graphiql_endpoint = GraphiQLHandler::new("/graphql", None);

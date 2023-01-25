@@ -2,7 +2,6 @@
 //!
 //! [`rot13`], [`caeser`], [`aristocrat`], [`patristocrat`]
 
-use super::CipherResult;
 use super::{match_case, shift_letter, Cipher, ALPHABET, WORDS};
 use itertools::Itertools;
 use rand::prelude::*;
@@ -44,12 +43,12 @@ fn substitute(s: &str, mapping: &[u8], keep_whitespace: bool) -> String {
 /// Shift each letter by 13.
 ///
 /// The cipher shifts each letter by 13. It is essentially a Caeser cipher but with a fixed shift.
-pub(super) fn rot13(s: &str) -> CipherResult<Cipher> {
-    Ok(Cipher::new(substitute(s, &ROT13_MAPPING, true), None))
+pub(super) fn rot13(s: &str) -> Cipher {
+    Cipher::new(substitute(s, &ROT13_MAPPING, true), None)
 }
 
 /// Randomly choose a shift `s` and shift each letter by `s`.
-pub(super) fn caeser<R>(s: &str, rng: &mut R) -> CipherResult<Cipher>
+pub(super) fn caeser<R>(s: &str, rng: &mut R) -> Cipher
 where
     R: Rng + ?Sized,
 {
@@ -65,14 +64,14 @@ where
         mapping[(b - b'a') as usize] = shift_letter(b, shift);
     }
 
-    Ok(Cipher::new(substitute(s, &mapping, true), None))
+    Cipher::new(substitute(s, &mapping, true), None)
 }
 
 /// Monoalphabetic substitution cipher.
 ///
 /// The cipher uniquely maps each letter in the alphabet to a different letter in the alphabet.
 /// This mapping is then used to map the input string to the output string.
-pub(super) fn aristocrat<R>(s: &str, rng: &mut R) -> CipherResult<Cipher>
+pub(super) fn aristocrat<R>(s: &str, rng: &mut R) -> Cipher
 where
     R: Rng + ?Sized,
 {
@@ -84,11 +83,11 @@ where
         mapping.shuffle(rng);
     }
 
-    Ok(Cipher::new(substitute(s, &mapping, true), None))
+    Cipher::new(substitute(s, &mapping, true), None)
 }
 
 /// Similar to aristocrat, but removes all spaces.
-pub(super) fn patristocrat<R>(s: &str, rng: &mut R) -> CipherResult<Cipher>
+pub(super) fn patristocrat<R>(s: &str, rng: &mut R) -> Cipher
 where
     R: Rng + ?Sized,
 {
@@ -100,11 +99,11 @@ where
         mapping.shuffle(rng);
     }
 
-    Ok(Cipher::new(substitute(s, &mapping, false), None))
+    Cipher::new(substitute(s, &mapping, false), None)
 }
 
 /// Essentially the same as patristocrat, but uses a keyed plaintext.
-pub(super) fn patristocrat_k1<R>(s: &str, key: Option<String>, rng: &mut R) -> CipherResult<Cipher>
+pub(super) fn patristocrat_k1<R>(s: &str, key: Option<String>, rng: &mut R) -> Cipher
 where
     R: Rng + ?Sized,
 {
@@ -152,11 +151,11 @@ where
         mapping.rotate_right(1);
     }
 
-    Ok(Cipher::new(substitute(s, &mapping, false), Some(key)))
+    Cipher::new(substitute(s, &mapping, false), Some(key))
 }
 
 /// Essentially the same as patristocrat, but uses a keyed ciphertext.
-pub(super) fn patristocrat_k2<R>(s: &str, key: Option<String>, rng: &mut R) -> CipherResult<Cipher>
+pub(super) fn patristocrat_k2<R>(s: &str, key: Option<String>, rng: &mut R) -> Cipher
 where
     R: Rng + ?Sized,
 {
@@ -189,7 +188,7 @@ where
     }
 
     // next, we map the rest of the plaintext to the rest of the ciphertext alphabet
-    for b in ALPHABET.into_iter() {
+    for b in ALPHABET {
         if !key_chars[b as usize] {
             mapping[i] = b;
             i += 1;
@@ -205,7 +204,7 @@ where
         mapping.rotate_left(1);
     }
 
-    Ok(Cipher::new(substitute(s, &mapping, false), Some(key)))
+    Cipher::new(substitute(s, &mapping, false), Some(key))
 }
 
 #[cfg(test)]
@@ -221,7 +220,7 @@ mod tests {
         let res = rot13(TEST_TEXT);
 
         assert_eq!(
-            res.unwrap().ciphertext,
+            res.ciphertext,
             "nopqrstuvwxyzabcdefghijklm 0123456789-!'\".NOPQRSTUVWXYZABCDEFGHIJKLM"
         );
     }
@@ -230,21 +229,21 @@ mod tests {
     fn test_caesar() {
         let res = caeser(TEST_TEXT, &mut StepRng::new(0, 1));
         let ans = "bcdefghijklmnopqrstuvwxyza 0123456789-!'\".BCDEFGHIJKLMNOPQRSTUVWXYZA";
-        assert_eq!(res.unwrap().ciphertext, ans);
+        assert_eq!(res.ciphertext, ans);
     }
 
     #[test]
     fn test_aristocrat() {
         let res = aristocrat(TEST_TEXT, &mut StepRng::new(0, 1));
         let ans = "bcdefghijklmnopqrstuvwxyza 0123456789-!'\".BCDEFGHIJKLMNOPQRSTUVWXYZA";
-        assert_eq!(res.unwrap().ciphertext, ans);
+        assert_eq!(res.ciphertext, ans);
     }
     #[test]
     fn test_patristocrat() {
         let res = patristocrat(TEST_TEXT, &mut StepRng::new(0, 1));
         let ans =
             "bcdef ghijk lmnop qrstu vwxyz a0123 45678 9-!'\" .BCDE FGHIJ KLMNO PQRST UVWXY ZA";
-        assert_eq!(res.unwrap().ciphertext, ans);
+        assert_eq!(res.ciphertext, ans);
     }
 
     #[test]
@@ -256,7 +255,7 @@ mod tests {
         );
         let ans = "tesky abcdf ghijl mnopq ruvwx z";
 
-        assert_eq!(res.unwrap().ciphertext, ans);
+        assert_eq!(res.ciphertext, ans);
     }
 
     #[test]
@@ -268,6 +267,6 @@ mod tests {
         );
         let ans = "tesky abcdf ghijl mnopq ruvwx z";
 
-        assert_eq!(res.unwrap().ciphertext, ans);
+        assert_eq!(res.ciphertext, ans);
     }
 }

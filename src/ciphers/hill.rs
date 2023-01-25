@@ -58,7 +58,7 @@ fn matmul(plaintext: &[u8], key: Vec<Vec<u8>>) -> Vec<u8> {
             let mut s: u32 = 0;
             for k in 0..key.len() {
                 log::trace!("    i={i}, j={j}, k={k}, s={s}");
-                s += (plaintext[i + k] - b'a') as u32 * (key[j][k] - b'a') as u32;
+                s += u32::from(plaintext[i + k] - b'a') * u32::from(key[j][k] - b'a');
             }
             result.push((s % 26) as u8 + b'a');
             log::trace!("    Added {}", ((s % 26) as u8 + b'a') as char);
@@ -122,7 +122,7 @@ where
     // convert 1-d key into square matrix
     let mut bytes = key.clone().into_iter();
     let mut matrix = vec![vec![0; side_length]; side_length];
-    for row in matrix.iter_mut() {
+    for row in &mut matrix {
         for item in row.iter_mut() {
             *item = bytes.next().unwrap();
         }

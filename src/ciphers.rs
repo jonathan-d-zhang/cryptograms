@@ -8,7 +8,9 @@ mod morse;
 mod substitution;
 
 use super::cryptogram::Type;
-use super::cryptogram::Type::*;
+use super::cryptogram::Type::{
+    Aristocrat, Caesar, Hill, Identity, Morbit, Patristocrat, PatristocratK1, PatristocratK2, Rot13,
+};
 pub(crate) use errors::{CipherError, CipherResult, ErrorKind};
 use lazy_static::lazy_static;
 use rand::prelude::*;
@@ -34,9 +36,7 @@ lazy_static! {
             })
             .collect();
 
-        if words.is_empty() {
-            panic!("WORDS_FILE must be non-empty");
-        }
+        assert!(!words.is_empty(), "WORDS_FILE must be non-empty");
 
         words
     };
@@ -45,7 +45,7 @@ lazy_static! {
 /// Lowercase alphabet.
 const ALPHABET: [u8; 26] = *b"abcdefghijklmnopqrstuvwxyz";
 
-/// Adjust the case of ord to match the case of to_match
+/// Adjust the case of ord to match the case of `to_match`
 const fn match_case(ord: u8, to_match: u8) -> u8 {
     let is_lower = (to_match >> 5) & 1;
     ord & !(1 << 5) | (is_lower << 5)
@@ -59,8 +59,8 @@ const fn shift_letter(b: u8, by: u8) -> u8 {
 }
 
 /// Returns the input string unchanged.
-fn identity(s: &str) -> CipherResult<Cipher> {
-    Ok(Cipher::new(s.to_string(), None))
+fn identity(s: &str) -> Cipher {
+    Cipher::new(s.to_string(), None)
 }
 
 /// The type returned by the various encryption functions in this library.
@@ -84,18 +84,19 @@ impl Cipher {
         key: Option<String>,
     ) -> CipherResult<Self> {
         let rng = &mut thread_rng();
-        match cipher_type {
+
+        Ok(match cipher_type {
             Aristocrat => substitution::aristocrat(plaintext, rng),
             Caesar => substitution::caeser(plaintext, rng),
             // Cryptarithm => cryptarithm::cryptarithm(&mut rng),
-            Hill => hill::hill(plaintext, key, rng),
+            Hill => hill::hill(plaintext, key, rng)?,
             Identity => identity(plaintext),
             Morbit => morse::morbit(plaintext, key),
             Patristocrat => substitution::patristocrat(plaintext, rng),
             PatristocratK1 => substitution::patristocrat_k1(plaintext, key, rng),
             PatristocratK2 => substitution::patristocrat_k2(plaintext, key, rng),
             Rot13 => substitution::rot13(plaintext),
-        }
+        })
     }
 }
 
@@ -143,10 +144,18 @@ mod tests {
             expected.push(i);
         }
 
-        println!("{:?}", expected);
+        println!("{expected:?}");
         let initial = b't';
         for i in 0..26 {
             assert_eq!(shift_letter(initial, i), expected[i as usize]);
         }
+    }
+
+    #[test]
+    fn test_identity() {
+        assert_eq!(
+            identity("abcdefghijklmnopqrstuvwxyz").ciphertext,
+            "abcdefghijklmnopqrstuvwxyz".into()
+        )
     }
 }

@@ -17,8 +17,8 @@ use std::sync::{
     Mutex,
 };
 
+use super::Cipher;
 use super::WORDS;
-use super::{Cipher, CipherResult};
 
 static mut STATS: [AtomicU64; 3] = [AtomicU64::new(0), AtomicU64::new(0), AtomicU64::new(0)];
 
@@ -62,7 +62,7 @@ impl Pattern {
         }
         log::trace!("Created pattern {pat:?} from {num}");
         Self {
-            length: (num as f64).log10().ceil() as usize,
+            length: f64::from(num).log10().ceil() as usize,
             pattern: Regex::new(&format!("^{pat}$")).unwrap(),
             used_letters: mapping.keys().copied().collect(),
             indexes,
@@ -152,7 +152,7 @@ fn create_cryptarithm(a: &str, b: &str, words: &[&String]) -> Option<String> {
 
     let solutions = Mutex::new(Vec::new());
     for (i, p) in (0..=9).permutations(unique_letter_count).enumerate() {
-        if i % 100000 == 0 {
+        if i % 100_000 == 0 {
             unsafe {
                 log::debug!("Tries: {:?}", STATS);
             }
@@ -210,7 +210,7 @@ fn create_cryptarithm(a: &str, b: &str, words: &[&String]) -> Option<String> {
     if sol.len() == 1 {
         //        let (num_a, num_b, s, word) = solutions[0];
         //        log::debug!("Solution found: {num_a} + {num_b} = {s}");
-        return Some(sol[0].to_string());
+        return Some((**sol[0]).to_string());
     }
 
     None
@@ -219,7 +219,7 @@ fn create_cryptarithm(a: &str, b: &str, words: &[&String]) -> Option<String> {
 /// Generates a cryptarithm
 ///
 /// See module level docs for more info about cryptarithms
-pub(super) fn cryptarithm<R: Rng + ?Sized>(rng: &mut R) -> CipherResult<Cipher> {
+pub(super) fn cryptarithm<R: Rng + ?Sized>(rng: &mut R) -> Cipher {
     loop {
         let words: Vec<&String> = WORDS.choose_multiple(rng, 10).collect();
         log::debug!("Words in this batch: {:?}", words);
@@ -238,7 +238,7 @@ pub(super) fn cryptarithm<R: Rng + ?Sized>(rng: &mut R) -> CipherResult<Cipher> 
                     unsafe {
                         log::debug!("Tries: {:?}", STATS);
                     }
-                    return Ok(Cipher::new(cryptarithm, None));
+                    return Cipher::new(cryptarithm, None);
                 }
             }
         }
@@ -283,7 +283,7 @@ mod tests {
 
     #[test]
     fn test_matches_pattern() {
-        let pattern = Pattern::new(112233, &HashMap::from([('a', 1), ('b', 2), ('c', 3)]));
+        let pattern = Pattern::new(112_233, &HashMap::from([('a', 1), ('b', 2), ('c', 3)]));
 
         let word = "aabbcc";
 

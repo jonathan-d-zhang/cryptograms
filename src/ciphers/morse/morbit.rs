@@ -1,6 +1,5 @@
 //! Define the morbit cipher.
 
-use super::super::CipherResult;
 use super::{super::Cipher, morse_encode};
 use rand::prelude::*;
 use std::collections::HashMap;
@@ -34,7 +33,7 @@ fn map_key(v: &Vec<u8>) -> Vec<usize> {
 /// Morbit is an over-encryption of Morse code, similar to Fractionated Morse Code. The plaintext
 /// is first converted into Morse code. Then, pairs of the Morse letters are mapped by the key
 /// to the ciphertext.
-pub(in super::super) fn morbit(s: &str, key: Option<String>) -> CipherResult<Cipher> {
+pub(in super::super) fn morbit(s: &str, key: Option<String>) -> Cipher {
     let key = key
         .unwrap_or_else(|| generate_key(&mut thread_rng()))
         .to_ascii_lowercase();
@@ -69,10 +68,10 @@ pub(in super::super) fn morbit(s: &str, key: Option<String>) -> CipherResult<Cip
     for pair in morse_encoded.chunks(2) {
         let a = pair[0];
         let b = if pair.len() == 2 { pair[1] } else { '/' };
-        out.push_str(&mapping[&format!("{}{}", a, b) as &str]);
+        out.push_str(&mapping[&format!("{a}{b}") as &str]);
     }
 
-    Ok(Cipher::new(out, Some(key)))
+    Cipher::new(out, Some(key))
 }
 
 #[cfg(test)]
