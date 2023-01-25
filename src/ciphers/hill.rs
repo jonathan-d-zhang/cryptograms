@@ -40,12 +40,12 @@ where
     t.choose_multiple(rng, KEY_LENGTH).copied().collect()
 }
 
-fn matmul(plaintext: &[u8], key: Vec<Vec<u8>>) -> Vec<u8> {
+fn matmul(plaintext: &[u8], key: &[Vec<u8>]) -> Vec<u8> {
     log::trace!(
         "Matmulling plaintext={:?} with key={:?}",
         String::from_utf8_lossy(plaintext),
-        key.clone()
-            .into_iter()
+        key.into_iter()
+            .cloned()
             .map(|r| String::from_utf8(r).unwrap())
             .collect::<Vec<_>>()
     );
@@ -128,7 +128,7 @@ where
         }
     }
 
-    let r = matmul(filtered.as_bytes(), matrix);
+    let r = matmul(filtered.as_bytes(), &matrix);
 
     Ok(Cipher::new(
         String::from_utf8(r).unwrap(),
@@ -162,7 +162,7 @@ mod tests {
         let plaintext = b"abcd";
         let key = vec![vec![b'a', b'b'], vec![b'c', b'd']];
 
-        let res = matmul(plaintext, key);
+        let res = matmul(plaintext, &key);
         println!("{:?}", String::from_utf8(res.clone()).unwrap());
 
         assert_eq!(res, vec![b'b', b'd', b'd', b'n'])

@@ -26,7 +26,9 @@ fn substitute(s: &str, mapping: &[u8], keep_whitespace: bool) -> String {
         }
     }
 
-    if !keep_whitespace {
+    if keep_whitespace {
+        out
+    } else {
         let mut interspersed = String::with_capacity(s.len() + s.len() / 5);
         for chunk in &out.chars().chunks(5) {
             chunk.for_each(|c| interspersed.push(c));
@@ -35,8 +37,6 @@ fn substitute(s: &str, mapping: &[u8], keep_whitespace: bool) -> String {
         interspersed.pop();
 
         interspersed
-    } else {
-        out
     }
 }
 
