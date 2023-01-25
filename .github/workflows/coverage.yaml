@@ -33,20 +33,20 @@ jobs:
           profile: minimal
           components: llvm-tools-preview
 
-      - name: Install grcov
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: cargo install grcov
-
       - name: Setup mold
         uses: rui314/setup-mold@v1
         with:
           make-default: true
 
+      - name: Install grcov
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: cargo install grcov
+
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --no-fail-fast
+          args: --lib --no-fail-fast
         env:
           RUSTFLAGS: "-Cinstrument-coverage"
           LLVM_PROFILE_FILE: "cryptograms-%p-%m.profraw"

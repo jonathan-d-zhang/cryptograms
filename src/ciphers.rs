@@ -155,7 +155,7 @@ mod tests {
     fn test_identity() {
         assert_eq!(
             identity("abcdefghijklmnopqrstuvwxyz").ciphertext,
-            "abcdefghijklmnopqrstuvwxyz".into()
+            "abcdefghijklmnopqrstuvwxyz".to_string()
         )
     }
 }

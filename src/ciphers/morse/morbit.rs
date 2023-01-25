@@ -97,6 +97,6 @@ mod tests {
     fn test_morbit() {
         let out = morbit("MORE BITS", Some(String::from("MORSECODE")));
 
-        assert_eq!(out.unwrap().ciphertext, "32379749578158");
+        assert_eq!(out.ciphertext, "32379749578158");
     }
 }
