@@ -44,7 +44,7 @@ fn matmul(plaintext: &[u8], key: &[Vec<u8>]) -> Vec<u8> {
     log::trace!(
         "Matmulling plaintext={:?} with key={:?}",
         String::from_utf8_lossy(plaintext),
-        key.into_iter()
+        key.iter()
             .cloned()
             .map(|r| String::from_utf8(r).unwrap())
             .collect::<Vec<_>>()
