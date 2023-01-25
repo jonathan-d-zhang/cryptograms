@@ -18,6 +18,7 @@ use std::sync::{
 };
 
 use super::WORDS;
+use super::{Cipher, CipherResult};
 
 static mut STATS: [AtomicU64; 3] = [AtomicU64::new(0), AtomicU64::new(0), AtomicU64::new(0)];
 
@@ -218,7 +219,7 @@ fn create_cryptarithm(a: &str, b: &str, words: &[&String]) -> Option<String> {
 /// Generates a cryptarithm
 ///
 /// See module level docs for more info about cryptarithms
-pub fn cryptarithm<R: Rng + ?Sized>(rng: &mut R) -> String {
+pub(super) fn cryptarithm<R: Rng + ?Sized>(rng: &mut R) -> CipherResult<Cipher> {
     loop {
         let words: Vec<&String> = WORDS.choose_multiple(rng, 10).collect();
         log::debug!("Words in this batch: {:?}", words);
@@ -237,7 +238,7 @@ pub fn cryptarithm<R: Rng + ?Sized>(rng: &mut R) -> String {
                     unsafe {
                         log::debug!("Tries: {:?}", STATS);
                     }
-                    return cryptarithm;
+                    return Ok(Cipher::new(cryptarithm, None));
                 }
             }
         }

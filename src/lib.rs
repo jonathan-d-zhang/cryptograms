@@ -17,6 +17,7 @@ use postgres::{Client, NoTls};
 pub mod ciphers;
 pub mod cryptogram;
 mod quotes;
+
 pub use cryptogram::{Answer, Cryptogram, Length, Type};
 
 struct Context {
@@ -84,8 +85,13 @@ impl Mutation {
         length: Option<Length>,
         r#type: Option<Type>,
         key: Option<String>,
-    ) -> Cryptogram {
-        let cryptogram = Cryptogram::new(plaintext, length, r#type, key);
+    ) -> FieldResult<Cryptogram> {
+        let cryptogram = Cryptogram::new(plaintext, length, r#type, key).map_err(|e| {
+            FieldError::new(
+                "Error constructing cryptogram",
+                graphql_value!(format!("{e}")),
+            )
+        })?;
 
         println!(
             "inserting token={:?}, plaintext={:?}, key={:?}",
@@ -102,7 +108,7 @@ impl Mutation {
             )
             .unwrap();
 
-        cryptogram
+        Ok(cryptogram)
     }
 }
 

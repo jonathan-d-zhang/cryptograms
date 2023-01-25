@@ -27,6 +27,7 @@
 use std::cmp::Ordering;
 
 use super::Cipher;
+use super::{CipherError, CipherResult, ErrorKind};
 use rand::prelude::*;
 
 const KEY_LENGTH: usize = 4;
@@ -41,13 +42,14 @@ where
 
 fn matmul(plaintext: &[u8], key: Vec<Vec<u8>>) -> Vec<u8> {
     log::trace!(
-        "Matmulling plaintext{:?} with key={:?}",
+        "Matmulling plaintext={:?} with key={:?}",
         String::from_utf8_lossy(plaintext),
         key.clone()
             .into_iter()
             .map(|r| String::from_utf8(r).unwrap())
             .collect::<Vec<_>>()
     );
+
     // our plaintexts are limited to 160 bytes, naive algo is fine
     let mut result = Vec::new();
 
@@ -80,7 +82,7 @@ fn is_perfect_square(n: usize) -> bool {
     }
 }
 
-pub fn hill<R>(plaintext: &str, key: Option<String>, rng: &mut R) -> Cipher
+pub(super) fn hill<R>(plaintext: &str, key: Option<String>, rng: &mut R) -> CipherResult<Cipher>
 where
     R: Rng + ?Sized,
 {
@@ -95,9 +97,11 @@ where
 
     // key must be a perfect square
     if !is_perfect_square(n) {
-        // TODO: change return type of cipher functions to Result
-        log::warn!("Key length {} is not a perfect square", n);
-        panic!("Key length must be a perfect square");
+        log::debug!("Key length {} is not a perfect square", n);
+        return Err(CipherError::new(
+            ErrorKind::KeyError,
+            "Key length must be a perfect square".into(),
+        ));
     }
 
     let side_length = (n as f64).sqrt() as usize;
@@ -126,10 +130,10 @@ where
 
     let r = matmul(filtered.as_bytes(), matrix);
 
-    Cipher::new(
+    Ok(Cipher::new(
         String::from_utf8(r).unwrap(),
         Some(String::from_utf8(key).unwrap()),
-    )
+    ))
 }
 
 #[cfg(test)]
@@ -148,7 +152,7 @@ mod tests {
     #[test]
     fn test_hill() {
         let mut rng = StepRng::new(0, 1);
-        let res = hill("abcd", Some("abcd".into()), &mut rng);
+        let res = hill("abcd", Some("abcd".into()), &mut rng).unwrap();
 
         assert_eq!(res.ciphertext, "bddn");
     }

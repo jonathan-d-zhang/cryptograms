@@ -1,16 +1,17 @@
 //! This module contains the implementation of the various ciphers.
-
 #![warn(missing_docs)]
 
-use super::cryptogram::Type;
-use super::cryptogram::Type::*;
-use lazy_static::lazy_static;
-use rand::prelude::*;
-
 mod cryptarithm;
+mod errors;
 mod hill;
 mod morse;
 mod substitution;
+
+use super::cryptogram::Type;
+use super::cryptogram::Type::*;
+pub(crate) use errors::{CipherError, CipherResult, ErrorKind};
+use lazy_static::lazy_static;
+use rand::prelude::*;
 
 lazy_static! {
     /// Stores words suitable for use as keys in patristocrats or operands in cryptarithms
@@ -58,8 +59,8 @@ const fn shift_letter(b: u8, by: u8) -> u8 {
 }
 
 /// Returns the input string unchanged.
-fn identity(s: &str) -> Cipher {
-    Cipher::new(s.to_string(), None)
+fn identity(s: &str) -> CipherResult<Cipher> {
+    Ok(Cipher::new(s.to_string(), None))
 }
 
 /// The type returned by the various encryption functions in this library.
@@ -77,7 +78,11 @@ impl Cipher {
     }
 
     /// Wrapper function to call a specific cipher by [`Type`].
-    pub fn encrypt(plaintext: &str, cipher_type: Type, key: Option<String>) -> Self {
+    pub(crate) fn encrypt(
+        plaintext: &str,
+        cipher_type: Type,
+        key: Option<String>,
+    ) -> CipherResult<Self> {
         let rng = &mut thread_rng();
         match cipher_type {
             Aristocrat => substitution::aristocrat(plaintext, rng),

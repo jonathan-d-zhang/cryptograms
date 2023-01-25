@@ -1,8 +1,7 @@
 //! This module defines the Cryptogram object for the public interface.
 
-use super::ciphers::Cipher;
+use super::ciphers::{Cipher, CipherResult};
 use super::quotes;
-
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
@@ -96,12 +95,12 @@ impl Cryptogram {
     /// If plaintext is not given, then a random quotation is selected.
     /// The default `length` is [`Length::Medium`] and the default `r#type`
     /// is [`Type::Identity`], though this may change in the future.
-    pub fn new(
+    pub(crate) fn new(
         plaintext: Option<String>,
         length: Option<Length>,
         r#type: Option<Type>,
         key: Option<String>,
-    ) -> Self {
+    ) -> CipherResult<Self> {
         use Type::*;
         let r#type = r#type.unwrap_or(Identity);
 
@@ -112,7 +111,7 @@ impl Cryptogram {
             None => quotes::fetch_quote(length),
         };
 
-        let cipher = Cipher::encrypt(&quote.text, r#type, key);
+        let cipher = Cipher::encrypt(&quote.text, r#type, key)?;
 
         let frequencies = match r#type {
             Identity | Caesar | Aristocrat | Patristocrat | PatristocratK1 | PatristocratK2 => {
@@ -121,7 +120,7 @@ impl Cryptogram {
             _ => None,
         };
 
-        Self {
+        Ok(Self {
             ciphertext: cipher.ciphertext.to_uppercase(),
             r#type,
             length,
@@ -130,7 +129,7 @@ impl Cryptogram {
             key: cipher.key,
             plaintext: quote.text,
             frequencies,
-        }
+        })
     }
 }
 
