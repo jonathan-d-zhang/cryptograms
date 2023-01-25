@@ -8,7 +8,7 @@ type Cryptogram {
   "The author of the quote."
   author: String
   "Token to request the plaintext."
-  token: String!
+  token: Int!
 }
 
 type Mutation {
@@ -24,7 +24,7 @@ type Query {
   "The api version."
   apiVersion: String!
   "Request plaintext for a specific cryptogram by token."
-  plaintext(token: String!): String!
+  plaintext(token: Int!): String!
 }
 
 """
@@ -56,3 +56,4 @@ schema {
   query: Query
   mutation: Mutation
 }
+

@@ -1,6 +1,6 @@
 //! Define the morbit cipher.
 
-use super::morse_encode;
+use super::{super::Cipher, morse_encode};
 use rand::prelude::*;
 use std::collections::HashMap;
 
@@ -28,7 +28,12 @@ fn map_key(v: &Vec<u8>) -> Vec<usize> {
     out
 }
 
-pub fn morbit(s: &str, key: Option<String>) -> String {
+/// Morbit Cipher
+///
+/// Morbit is an over-encryption of Morse code, similar to Fractionated Morse Code. The plaintext
+/// is first converted into Morse code. Then, pairs of the Morse letters are mapped by the key
+/// to the ciphertext.
+pub(in super::super) fn morbit(s: &str, key: Option<String>) -> Cipher {
     let key = key
         .unwrap_or_else(|| generate_key(&mut thread_rng()))
         .to_ascii_lowercase();
@@ -63,22 +68,22 @@ pub fn morbit(s: &str, key: Option<String>) -> String {
     for pair in morse_encoded.chunks(2) {
         let a = pair[0];
         let b = if pair.len() == 2 { pair[1] } else { '/' };
-        out.push_str(&mapping[&format!("{}{}", a, b) as &str]);
+        out.push_str(&mapping[&format!("{a}{b}") as &str]);
     }
 
-    out
+    Cipher::new(out, Some(key))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ciphers::tests::MockRng;
+    use rand::rngs::mock::StepRng;
 
     #[test]
     fn test_generate_key() {
-        let k = generate_key(&mut MockRng);
+        let k = generate_key(&mut StepRng::new(0, 1));
 
-        assert_eq!(k, "aaaaaaaaa")
+        assert_eq!(k, "abcdefghi")
     }
 
     #[test]
@@ -92,6 +97,6 @@ mod tests {
     fn test_morbit() {
         let out = morbit("MORE BITS", Some(String::from("MORSECODE")));
 
-        assert_eq!(out, "32379749578158");
+        assert_eq!(out.unwrap().ciphertext, "32379749578158");
     }
 }

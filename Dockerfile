@@ -1,4 +1,4 @@
-FROM rust:1.62 as base
+FROM rust:1.66 as base
 
 RUN USER=root cargo new --bin cryptograms
 WORKDIR /cryptograms
@@ -17,6 +17,8 @@ RUN cargo build
 FROM debian:bullseye-slim as dev
 
 COPY --from=base /cryptograms/target/debug/cryptograms ./cryptograms
+COPY quotes.json quotes.json
+COPY words.txt words.txt
 
 CMD ["./cryptograms"]
 

@@ -1,5 +1,7 @@
-mod morbit;
-pub use morbit::morbit;
+//! Contains the two morse code ciphers, Morbit and Pollux.
+
+pub(super) mod morbit;
+pub(super) use morbit::morbit;
 
 /// Morse alphabet.
 const MORSE_ALPHABET: [&str; 26] = [

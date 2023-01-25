@@ -8,10 +8,17 @@ juniper = "~0.15"
 juniper_iron = "~0.7"
 iron = ">= 0.5, < 0.7"
 logger = "0.4"
+log = "~0.4"
+env_logger = "~0.9"
 mount = "0.4"
 serde_json = "~1.0"
 lazy_static = "1.4"
 rand = "~0.8"
+itertools = "~0.10"
+regex = "1"
+rayon = "1.5"
+postgres = "0.19"
+persistent = "0.4"
 
 [dev-dependencies]
 graphql_client = { version = "~0.11", features = ["reqwest-blocking"] }
@@ -19,7 +26,6 @@ serde = "^1.0"
 reqwest = { version = "^0.11", features = ["json", "blocking"] }
 tempfile = "~3.3"
 rand_core = "~0.6"
-regex = "~1.0"
 
 [[test]]
 name = "integration"
@@ -27,3 +33,5 @@ harness = false
 path = "tests/integration_test.rs"
 test = true
 
+[profile.release]
+debug = true
