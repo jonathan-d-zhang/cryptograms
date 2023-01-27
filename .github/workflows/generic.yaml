@@ -5,6 +5,7 @@ on:
     paths-ignore:
       - "tests/**"
       - "src/**"
+      - ".github/workflows/**"
 
 jobs:
   Coverage:

@@ -5,6 +5,7 @@ on:
     paths:
       - "tests/**"
       - "src/**"
+      - ".github/workflows/coverage.yaml"
   workflow_dispatch:
 
 jobs:
