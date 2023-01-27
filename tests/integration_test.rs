@@ -216,7 +216,7 @@ fn test_cryptogram_identity_medium() {
 
     assert_eq!(
         data.cryptogram.ciphertext,
-        "The quick brown fox jumps over the lazy dog. Can't-I'm<>12932. Cwm fjord bank glyphs vext quiz!",
+        "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG. CAN'T-I'M<>12932. CWM FJORD BANK GLYPHS VEXT QUIZ!",
     )
 }
 

@@ -1,4 +1,4 @@
-FROM rust:1.66 as base
+FROM rustlang/rust:nightly-bullseye as test
 
 RUN USER=root cargo new --bin cryptograms
 WORKDIR /cryptograms
@@ -8,15 +8,33 @@ COPY Cargo.lock Cargo.lock
 
 RUN cargo build
 
-COPY src src
 RUN rm target/debug/deps/cryptograms*
 
-RUN cargo build
+COPY tests tests
+COPY src src
+
+RUN cargo test --no-run
 
 #########################
-FROM debian:bullseye-slim as dev
+FROM rust:1.66-slim-bullseye as build-prod
 
-COPY --from=base /cryptograms/target/debug/cryptograms ./cryptograms
+RUN USER=root cargo new --bin cryptograms
+WORKDIR /cryptograms
+
+COPY Cargo.toml Cargo.toml
+COPY Cargo.lock Cargo.lock
+
+RUN cargo build --release
+
+COPY src src
+RUN rm target/release/deps/cryptograms*
+
+RUN cargo build --release
+
+#########################
+FROM debian:bullseye-slim as prod
+
+COPY --from=build-prod /cryptograms/target/release/cryptograms ./cryptograms
 COPY quotes.json quotes.json
 COPY words.txt words.txt
 

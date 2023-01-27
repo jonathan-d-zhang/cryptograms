@@ -137,7 +137,9 @@ pub fn make_server() {
     let mut chain = Chain::new(mount);
     chain.link(Logger::new(None));
 
-    let mut client = Client::connect("postgres://postgres:postgres@postgres:5432?", NoTls)
+    let pg_url = env::var("CRYPTOGRAMS_PG_URL").expect("Environment variable CRYPTOGRAMS_PG_URL must be set");
+
+    let mut client = Client::connect(&pg_url, NoTls)
         .expect("Could not connect to db");
 
     client

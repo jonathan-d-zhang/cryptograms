@@ -13,6 +13,7 @@ services:
       - RUST_LOG=debug
       - QUOTES_FILE=quotes.json
       - WORDS_FILE=words.txt
+      - CRYPTOGRAMS_PG_URL=postgres://postgres:postgres@postgres:5432
 
   postgres:
     image: postgres:15.1-bullseye
