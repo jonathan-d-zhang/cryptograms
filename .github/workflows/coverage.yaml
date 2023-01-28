@@ -66,6 +66,7 @@ jobs:
           RUSTFLAGS: "-Cinstrument-coverage"
           LLVM_PROFILE_FILE: "cryptograms-%p-%m.profraw"
           CRYPTOGRAMS_PG_URL: "postgres://postgres:postgres@localhost:5432"
+          RUST_LOG: "trace"
 
       - name: Generate coverage data
         run: |
