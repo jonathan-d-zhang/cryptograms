@@ -1,3 +1,4 @@
+/*
 //! Cryptarithm generator.
 //!
 //! A cryptarithm, or alphametic, is a puzzle in which you are given a mathematical equation where
@@ -253,23 +254,21 @@ pub(super) fn cryptarithm<R: Rng + ?Sized>(rng: &mut R) -> Cipher {
 mod tests {
     use super::*;
 
-    /*
-        #[test]
-        fn test_create_cryptarithm() {
-            let a = "send";
-            let b = "more";
+    #[test]
+    fn test_create_cryptarithm() {
+        let a = "send";
+        let b = "more";
 
-            let x = String::from("send");
-            let y = String::from("more");
-            let z = String::from("money");
-            let words: Vec<&String> = vec![&x, &y, &z];
+        let x = String::from("send");
+        let y = String::from("more");
+        let z = String::from("money");
+        let words: Vec<&String> = vec![&x, &y, &z];
 
-            assert_eq!(
-                create_cryptarithm(a, b, &words),
-                Some(String::from("money"))
-            );
-        }
-    */
+        assert_eq!(
+            create_cryptarithm(a, b, &words),
+            Some(String::from("money"))
+        );
+    }
     #[test]
     fn test_word_to_int() {
         let mapping = HashMap::from([('b', 3), ('c', 5)]);
@@ -290,3 +289,4 @@ mod tests {
         assert!(pattern.matches_pattern(word));
     }
 }
+*/
