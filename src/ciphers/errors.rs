@@ -34,3 +34,6 @@ impl fmt::Display for ErrorKind {
 }
 
 pub(crate) type CipherResult<T> = Result<T, CipherError>;
+
+// TODO: Add tests
+// TODO: Impl `IntoFieldError` for CipherError

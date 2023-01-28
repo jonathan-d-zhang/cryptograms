@@ -1,5 +1,5 @@
-mutation Cryptogram($plaintext: String, $type: Type, $length: Length) {
-  cryptogram(plaintext: $plaintext, type: $type, length: $length) {
+mutation Cryptogram($plaintext: String, $type: Type, $length: Length, $key: String) {
+  cryptogram(plaintext: $plaintext, type: $type, length: $length, key: $key) {
     ciphertext,
     type,
     length,
@@ -10,4 +10,11 @@ mutation Cryptogram($plaintext: String, $type: Type, $length: Length) {
 
 query Version {
   apiVersion
+}
+
+query Answer($token: Int!) {
+  answer(token: $token) {
+    plaintext,
+    key
+  }
 }

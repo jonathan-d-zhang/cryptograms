@@ -88,12 +88,12 @@ impl Mutation {
     ) -> FieldResult<Cryptogram> {
         let cryptogram = Cryptogram::new(plaintext, length, r#type, key).map_err(|e| {
             FieldError::new(
-                "Error constructing cryptogram",
-                graphql_value!(format!("{e}")),
+                format!("{e}"),
+                Value::null(),
             )
         })?;
 
-        println!(
+        log::debug!(
             "inserting token={:?}, plaintext={:?}, key={:?}",
             cryptogram.token, cryptogram.plaintext, cryptogram.key
         );

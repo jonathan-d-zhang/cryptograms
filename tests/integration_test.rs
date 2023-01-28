@@ -18,9 +18,12 @@ use std::process::ExitCode;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tempfile::TempPath;
-
 const URL: &str = "http://localhost:8080/graphql";
-const TEST_QUOTE: &str = "The quick brown fox jumps over the lazy dog. Can't-I'm<>12932. Cwm fjord bank glyphs vext quiz!";
+
+
+const TEST_QUOTE_SHORT: &str = "The quick brown fox jumps over the lazy dog and the farmer's 7th chicken";
+const TEST_QUOTE_MEDIUM: &str = "The quick brown fox jumps over the lazy dog. Can't-I'm<>12932. Cwm fjord bank glyphs vext quiz!";
+const TEST_QUOTES_JSON: &str = r#"[{"quote": "The quick brown fox jumps over the lazy dog and the farmer's 7th chicken", "author": "jz9", "genre": "testing"},{"quote": "The quick brown fox jumps over the lazy dog. Can't-I'm<>12932. Cwm fjord bank glyphs vext quiz!", "author": "jz9", "genre": "testing"}]"#;
 
 lazy_static! {
     /// Client for making requests to the API
@@ -31,9 +34,11 @@ lazy_static! {
 static TESTS: &[(fn(), &str)] = &[
     (test_api_version, "test_api_version"),
     (
-        test_cryptogram_identity_medium,
-        "test_cryptogram_identity_medium",
+        test_medium_identity,
+        "test_medium_identity",
     ),
+    (test_short_hill_valid_key, "test_short_hill_valid_key"),
+    (test_short_hill_invalid_key, "test_short_hill_invalid_key"),
     //    (test_cryptogram_cryptarithm, "test_cryptogram_cryptarithm"),
 ];
 
@@ -136,11 +141,7 @@ fn setup() -> (Vec<TempPath>, Arc<Mutex<Vec<u8>>>) {
 
     log::debug!("Created temp quotes file at {:?}", quotes_path);
 
-    std::fs::write(quotes_path,
-        r#"[{"quote": "The quick brown fox jumps over the lazy dog. Can't-I'm<>12932. Cwm fjord bank glyphs vext quiz!", "author": "jz9", "genre": "testing"}]"#
-        .as_bytes(),
-    )
-    .unwrap();
+    std::fs::write(quotes_path, TEST_QUOTES_JSON.as_bytes()).unwrap();
 
     std::env::set_var("QUOTES_FILE", quotes_path);
 
@@ -192,6 +193,14 @@ pub struct Version;
     query_path = "tests/query.graphql",
     response_derives = "Debug"
 )]
+pub struct Answer;
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "tests/schema.graphql",
+    query_path = "tests/query.graphql",
+    response_derives = "Debug"
+)]
 pub struct Cryptogram;
 
 fn test_api_version() {
@@ -203,21 +212,93 @@ fn test_api_version() {
     assert_eq!(data.api_version, "0.1")
 }
 
-fn test_cryptogram_identity_medium() {
+// First tests that the api returns the correct response
+// Then checks that it returns the correct plaintext when requested with the token it gives
+fn test_medium_identity() {
     let variables = cryptogram::Variables {
         plaintext: None,
         type_: Some(cryptogram::Type::IDENTITY),
         length: Some(cryptogram::Length::MEDIUM),
+        key: None,
     };
 
     let response_body = post_graphql::<Cryptogram, _>(&CLIENT, URL, variables).unwrap();
 
     let data: cryptogram::ResponseData = response_body.data.unwrap();
 
+    println!("{data:?}");
+
     assert_eq!(
         data.cryptogram.ciphertext,
         "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG. CAN'T-I'M<>12932. CWM FJORD BANK GLYPHS VEXT QUIZ!",
-    )
+    );
+
+    let variables = answer::Variables {
+        token: data.cryptogram.token
+    };
+
+    let response_body = post_graphql::<Answer, _>(&CLIENT, URL, variables).unwrap();
+
+    let data: answer::ResponseData = response_body.data.unwrap();
+    println!("{data:?}");
+
+    assert_eq!(
+        data.answer.plaintext,
+        TEST_QUOTE_MEDIUM,
+    );
+}
+
+fn test_short_hill_valid_key() {
+    let variables = cryptogram::Variables {
+        plaintext: None,
+        type_: Some(cryptogram::Type::HILL),
+        length: Some(cryptogram::Length::SHORT),
+        key: Some(String::from("abcd")),
+    };
+
+    let response_body = post_graphql::<Cryptogram, _>(&CLIENT, URL, variables).unwrap();
+
+    let data: cryptogram::ResponseData = response_body.data.unwrap();
+
+    println!("{data:?}");
+
+    assert_eq!(
+        data.cryptogram.ciphertext,
+        "HHQEIMKIRBWQFPXTUAPROAECTNEAAWYSOWAMDJHHFXRZEKSKHHHZCWEGZX",
+    );
+
+    let variables = answer::Variables {
+        token: data.cryptogram.token
+    };
+
+    let response_body = post_graphql::<Answer, _>(&CLIENT, URL, variables).unwrap();
+
+    assert!(response_body.errors.is_none());
+
+    let data: answer::ResponseData = response_body.data.unwrap();
+    println!("{data:?}");
+
+    assert_eq!(
+        data.answer.plaintext,
+        TEST_QUOTE_SHORT,
+    );
+}
+
+fn test_short_hill_invalid_key() {
+    let variables = cryptogram::Variables {
+        plaintext: None,
+        type_: Some(cryptogram::Type::HILL),
+        length: Some(cryptogram::Length::SHORT),
+        key: Some(String::from("aaa")),
+    };
+
+    let response_body = post_graphql::<Cryptogram, _>(&CLIENT, URL, variables);
+
+    println!("{response_body:?}");
+
+    let error = response_body.unwrap().errors.unwrap();
+
+    assert_eq!(error[0].message, "KeyError: Key length must be a perfect square")
 }
 
 /*

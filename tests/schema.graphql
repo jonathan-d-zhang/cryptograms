@@ -1,3 +1,10 @@
+type Answer {
+  "The plaintext"
+  plaintext: String!
+  "The key used to encrypt, if applicable."
+  key: String
+}
+
 type Cryptogram {
   "The encrypted text."
   ciphertext: String!
@@ -9,6 +16,8 @@ type Cryptogram {
   author: String
   "Token to request the plaintext."
   token: Int!
+  "Character frequencies, if applicable"
+  frequencies: [Int!]
 }
 
 type Mutation {
@@ -23,22 +32,32 @@ type Mutation {
 type Query {
   "The api version."
   apiVersion: String!
-  "Request plaintext for a specific cryptogram by token."
-  plaintext(token: Int!): String!
+  "Request plaintext and key for a specific cryptogram by token."
+  answer(token: Int!): Answer!
 }
 
 """
   Describe the type of cipher used to encrypt a [`Cryptogram`]
 
-  Each of the variants should have an accompanying function with a lowercased name.
-  For example, [`Identity`] has the function [`crate::ciphers::identity`].
+  Each of the variants has an accompanying function with a lowercased name.
+  For example, [`Type::Identity`] has the function [`crate::ciphers::identity`].
 """
 enum Type {
   "Returns the plaintext unchanged. See [`crate::ciphers::identity`] for more details." IDENTITY
-  "Shift letters by 13. See [`crate::ciphers::rot13`] for more details." ROT13
-  "Shift letters by a random amount. See [`crate::ciphers::caeser`] for more details." CAESAR
-  "Monoalphabetic substitution. See [`crate::ciphers::aristocrat`] for more details." ARISTOCRAT
+  "Shift letters by 13. See [`crate::ciphers::substitution::rot13`] for more details." ROT13
+  "Shift letters by a random amount. See [`crate::ciphers::substitution::caeser`] for more details." CAESAR
+  "Monoalphabetic substitution. See [`crate::ciphers::substitution::aristocrat`] for more details." ARISTOCRAT
+  "Monoalphabetic substitution, spaces ignored. See [`crate::ciphers::substitution::patristocrat`] for more details." PATRISTOCRAT
+  """
+    Monoalphabetic substitution, spaces ignored, keyed plaintext alphabet. See
+    [`crate::ciphers::substitution::patristocrat_k1`] for more details.
+  """ PATRISTOCRAT_K1
+  """
+    Monoalphabetic substitution, spaces ignored, keyed ciphertext alphabet. See
+    [`crate::ciphers::substitution::patristocrat_k1`] for more details.
+  """ PATRISTOCRAT_K2
   MORBIT
+  "Polyalphabetic substitution, spaces ignored. See ['crate::ciphers::hill`] for more details." HILL
 }
 
 """
