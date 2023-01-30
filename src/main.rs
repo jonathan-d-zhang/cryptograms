@@ -8,4 +8,6 @@ fn main() {
     } else {
         cryptograms::make_server();
     }
+
+    // add benchmarks
 }

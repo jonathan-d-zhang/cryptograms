@@ -21,3 +21,15 @@ fn morse_encode(b: u8) -> String {
         panic!("Can only morse encode ascii letters");
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{morse_encode, MORSE_ALPHABET};
+
+    #[test]
+    fn test_morse_encode() {
+        for b in b'a'..=b'z' {
+            assert_eq!(MORSE_ALPHABET[(b - b'a') as usize], morse_encode(b));
+        }
+    }
+}
