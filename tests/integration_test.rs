@@ -20,8 +20,8 @@ use std::thread;
 use tempfile::TempPath;
 const URL: &str = "http://localhost:8080/graphql";
 
-
-const TEST_QUOTE_SHORT: &str = "The quick brown fox jumps over the lazy dog and the farmer's 7th chicken";
+const TEST_QUOTE_SHORT: &str =
+    "The quick brown fox jumps over the lazy dog and the farmer's 7th chicken";
 const TEST_QUOTE_MEDIUM: &str = "The quick brown fox jumps over the lazy dog. Can't-I'm<>12932. Cwm fjord bank glyphs vext quiz!";
 const TEST_QUOTES_JSON: &str = r#"[{"quote": "The quick brown fox jumps over the lazy dog and the farmer's 7th chicken", "author": "jz9", "genre": "testing"},{"quote": "The quick brown fox jumps over the lazy dog. Can't-I'm<>12932. Cwm fjord bank glyphs vext quiz!", "author": "jz9", "genre": "testing"}]"#;
 
@@ -33,10 +33,7 @@ lazy_static! {
 /// Stores tuples of test and test name
 static TESTS: &[(fn(), &str)] = &[
     (test_api_version, "test_api_version"),
-    (
-        test_medium_identity,
-        "test_medium_identity",
-    ),
+    (test_medium_identity, "test_medium_identity"),
     (test_short_hill_valid_key, "test_short_hill_valid_key"),
     (test_short_hill_invalid_key, "test_short_hill_invalid_key"),
     //    (test_cryptogram_cryptarithm, "test_cryptogram_cryptarithm"),
@@ -234,7 +231,7 @@ fn test_medium_identity() {
     );
 
     let variables = answer::Variables {
-        token: data.cryptogram.token
+        token: data.cryptogram.token,
     };
 
     let response_body = post_graphql::<Answer, _>(&CLIENT, URL, variables).unwrap();
@@ -242,10 +239,7 @@ fn test_medium_identity() {
     let data: answer::ResponseData = response_body.data.unwrap();
     println!("{data:?}");
 
-    assert_eq!(
-        data.answer.plaintext,
-        TEST_QUOTE_MEDIUM,
-    );
+    assert_eq!(data.answer.plaintext, TEST_QUOTE_MEDIUM,);
 }
 
 fn test_short_hill_valid_key() {
@@ -268,7 +262,7 @@ fn test_short_hill_valid_key() {
     );
 
     let variables = answer::Variables {
-        token: data.cryptogram.token
+        token: data.cryptogram.token,
     };
 
     let response_body = post_graphql::<Answer, _>(&CLIENT, URL, variables).unwrap();
@@ -278,10 +272,7 @@ fn test_short_hill_valid_key() {
     let data: answer::ResponseData = response_body.data.unwrap();
     println!("{data:?}");
 
-    assert_eq!(
-        data.answer.plaintext,
-        TEST_QUOTE_SHORT,
-    );
+    assert_eq!(data.answer.plaintext, TEST_QUOTE_SHORT,);
 }
 
 fn test_short_hill_invalid_key() {
@@ -298,7 +289,10 @@ fn test_short_hill_invalid_key() {
 
     let error = response_body.unwrap().errors.unwrap();
 
-    assert_eq!(error[0].message, "KeyError: Key length must be a perfect square")
+    assert_eq!(
+        error[0].message,
+        "KeyError: Key length must be a perfect square"
+    )
 }
 
 /*

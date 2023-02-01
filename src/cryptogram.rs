@@ -27,6 +27,7 @@ pub enum Type {
     /// Monoalphabetic substitution, spaces ignored, keyed ciphertext alphabet. See
     /// [`crate::ciphers::substitution::patristocrat_k1`] for more details.
     PatristocratK2,
+    Pollux,
     Morbit,
     // Too unoptimized for now
     //    Cryptarithm,

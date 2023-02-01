@@ -9,7 +9,8 @@ mod substitution;
 
 use super::cryptogram::Type;
 use super::cryptogram::Type::{
-    Aristocrat, Caesar, Hill, Identity, Morbit, Patristocrat, PatristocratK1, PatristocratK2, Rot13,
+    Aristocrat, Caesar, Hill, Identity, Morbit, Patristocrat, PatristocratK1, PatristocratK2,
+    Pollux, Rot13,
 };
 pub(crate) use errors::{CipherError, CipherResult, ErrorKind};
 use lazy_static::lazy_static;
@@ -95,6 +96,7 @@ impl Cipher {
             Patristocrat => substitution::patristocrat(plaintext, rng),
             PatristocratK1 => substitution::patristocrat_k1(plaintext, key, rng),
             PatristocratK2 => substitution::patristocrat_k2(plaintext, key, rng),
+            Pollux => morse::pollux(plaintext, rng),
             Rot13 => substitution::rot13(plaintext),
         })
     }
