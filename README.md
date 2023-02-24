@@ -18,7 +18,7 @@ Cryptograms is designed to be used for the Science Olympiad event Codebusters. I
 - [x] Morbit
 - [x] Patristocrat, K1 and K2
 - [x] Pollux
-- [ ] Porta
+- [x] Porta
 - [ ] Rail Fence
 - [ ] Xenocrypt
 

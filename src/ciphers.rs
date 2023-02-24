@@ -5,12 +5,13 @@ mod cryptarithm;
 mod errors;
 mod hill;
 mod morse;
+mod polyalphabetic;
 mod substitution;
 
 use super::cryptogram::Type;
 use super::cryptogram::Type::{
     Aristocrat, Caesar, Hill, Identity, Morbit, Patristocrat, PatristocratK1, PatristocratK2,
-    Pollux, Rot13,
+    Pollux, Porta, Rot13,
 };
 pub(crate) use errors::{CipherError, CipherResult, ErrorKind};
 use lazy_static::lazy_static;
@@ -97,6 +98,7 @@ impl Cipher {
             PatristocratK1 => substitution::patristocrat_k1(plaintext, key, rng),
             PatristocratK2 => substitution::patristocrat_k2(plaintext, key, rng),
             Pollux => morse::pollux(plaintext, rng),
+            Porta => polyalphabetic::porta(plaintext, key, rng),
             Rot13 => substitution::rot13(plaintext),
         })
     }

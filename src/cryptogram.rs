@@ -28,6 +28,7 @@ pub enum Type {
     /// [`crate::ciphers::substitution::patristocrat_k1`] for more details.
     PatristocratK2,
     Pollux,
+    Porta,
     Morbit,
     // Too unoptimized for now
     //    Cryptarithm,

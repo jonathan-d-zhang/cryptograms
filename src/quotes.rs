@@ -67,3 +67,5 @@ pub fn fetch_quote(length: Length) -> Quote {
 
     Quote::new(quote.quote.clone(), Some(quote.author.clone()))
 }
+
+// TODO: test fetch_quote
