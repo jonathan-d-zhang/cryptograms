@@ -13,7 +13,7 @@ RUN rm target/debug/deps/cryptograms*
 COPY tests tests
 COPY src src
 
-RUN cargo test --no-run
+RUN cargo test --no-run 2>&1 | grep "Executable" | grep -Po "(?<=\().+\b" | sed -e "s/^/.\//" > tests.sh
 
 #########################
 FROM rust:1.66-slim-bullseye as build-prod

@@ -2,6 +2,8 @@ use super::Cipher;
 use super::WORDS;
 use rand::prelude::*;
 
+// load from file
+// http://www.practicalcryptography.com/ciphers/porta-cipher/
 static TABLEAU: [[u8; 26]; 13] = [
     [
         b'n', b'o', b'p', b'q', b'r', b's', b't', b'u', b'v', b'w', b'x', b'y', b'z', b'a', b'b',
@@ -57,7 +59,7 @@ static TABLEAU: [[u8; 26]; 13] = [
     ],
 ];
 
-pub fn porta<R>(s: &str, key: Option<String>, rng: &mut R) -> Cipher
+pub(super) fn porta<R>(s: &str, key: Option<String>, rng: &mut R) -> Cipher
 where
     R: ?Sized + Rng,
 {
@@ -67,11 +69,11 @@ where
         .to_ascii_lowercase();
 
     let mut out = Vec::with_capacity(s.len());
-    for (mut k, b) in key
-        .bytes()
-        .cycle()
-        .zip(s.to_ascii_lowercase().bytes().filter(|b| b.is_ascii_alphabetic()))
-    {
+    for (mut k, b) in key.bytes().cycle().zip(
+        s.to_ascii_lowercase()
+            .bytes()
+            .filter(|b| b.is_ascii_alphabetic()),
+    ) {
         k -= b'a';
         k -= k & 1;
         k /= 2;

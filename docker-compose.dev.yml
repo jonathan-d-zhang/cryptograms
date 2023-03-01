@@ -17,7 +17,7 @@ services:
       - RUSTFLAGS=-Cinstrument-coverage
       - LLVM_PROFILE_FILE=cryptograms-%p-%m.profraw
       - CRYPTOGRAMS_PG_URL=postgres://postgres:postgres@postgres:5432
-    command: ["cargo", "test", "--no-fail-fast"]
+    command: sh tests.sh
 
   postgres:
     image: postgres:15.1-bullseye

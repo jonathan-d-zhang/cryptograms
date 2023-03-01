@@ -22,4 +22,10 @@ Cryptograms is designed to be used for the Science Olympiad event Codebusters. I
 - [ ] Rail Fence
 - [ ] Xenocrypt
 
-A tentative order for the next ciphers to be implemented is: Pollux, Porta, Bacon.
+A tentative order for the next ciphers to be implemented is: Bacon, Affine, Atbash.
+
+## Testing
+Use `./runtest` to run tests. You must have docker installed.
+
+## Use
+`$ docker compose up`
